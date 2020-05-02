@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations
 import org.springframework.messaging.simp.annotation.SendToUser
 import org.springframework.stereotype.Controller
 import java.lang.IllegalArgumentException
+import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
 const val START_MSG = "\$start\$"
@@ -24,7 +25,7 @@ class GreetingController {
     @Autowired
     private var messagingTemplate: SimpMessageSendingOperations? = null
     private var allPlayers = emptyList<Player>().toMutableList()
-    private val playerToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf<String, MessageHeaders>()
+    private val playerNameToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf<String, MessageHeaders>()
     var gameState = GameState(REGISTER)
 
     @MessageMapping("/register")
@@ -32,38 +33,37 @@ class GreetingController {
             @Payload message: RegisterMessage,
             messageHeaders: MessageHeaders
     ) {
-        logger.info { "Receiver messageHeaders $messageHeaders" }
         if (message.name == START_MSG) {
-            logger.info { "STARTING GAME" }
+            logger.info { "Started game at ${LocalDateTime.now()}" }
             gameState = GameState(allPlayers.size)
             messagingTemplate!!.convertAndSend(
                     "/topic/registrations",
                     START_MSG,
                     messageHeaders
             )
-            println("Number of players is ${allPlayers.size}")
             allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run {
                 it.first.role = it.second
                 messagingTemplate!!.convertAndSendToUser(
                         it.first.sessionId,
                         "/queue/reply",
                         it.first,
-                        playerToHeaders[it.first.name]!!
+                        playerNameToHeaders[it.first.name]!!
                 )
             } }
+            allPlayers.forEach { logger.info {"${it.name} is ${it.role}" } }
         } else {
             var player: Player = Player()
             if (allPlayers.map { it.name }.contains(message.name)) {
                 //Update sessionId if name already exists. Simple fix for connectivity issues.
                 player = allPlayers.find { it.name == message.name }!!
                 player.sessionId = messageHeaders["simpSessionId"].toString();
-                playerToHeaders[player.name] = messageHeaders
+                playerNameToHeaders[player.name] = messageHeaders
             } else {
                 player = Player(messageHeaders["simpSessionId"].toString(), message.name, "", false)
-                playerToHeaders[player.name] = messageHeaders
+                playerNameToHeaders[player.name] = messageHeaders
                 allPlayers.add(player)
             }
-            logger.info { "Registered players: $allPlayers" }
+            logger.info { "Registered a new player: $player" }
             messagingTemplate!!.convertAndSend(
                     "/topic/registrations",
                     allPlayers,
