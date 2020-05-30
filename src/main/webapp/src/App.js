@@ -20,18 +20,9 @@ class App extends Component {
 
     render() {
         return (
-            <div>
-                {/*<StompClient*/}
-                {/*    endpoint="ws://localhost:8080/secrethit"*/}
-                {/*    topic="registrations"*/}
-                {/*    onMessage={this.handleMessage}*/}
-                {/*><NewIndex/>*/}
-                {/*</StompClient>*/}
-                <Websocket>
-                    <NewIndex/>
-                </Websocket>
-            </div>
-
+            <Websocket>
+                <NewIndex/>
+            </Websocket>
         );
     }
 }

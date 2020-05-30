@@ -4,10 +4,6 @@ group = "com.jaanerikpihel"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
-application {
-	mainClassName = "SecrethitApplication.kt"
-}
-
 plugins {
 	kotlin("jvm") version "1.3.70"
 	id("application")
