@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
 
-const Index = () => {
-    return (
+import JoinGame from "./JoinGame";
+import PlayersList from "./PlayersList";
+
+export default class RegisterPage extends PureComponent {
+    render = () => (
         <div>
             <section className="secret-slice" id="boxes">
                 <div className="secret-container">
@@ -16,17 +19,7 @@ const Index = () => {
                             <h2>Join</h2>
                             <div className="row">
                                 <div className="col-md-6">
-                                    <form className="form-inline">
-                                        <div className="form-group">
-                                            <input type="text" id="name" className="form-control secret-button"
-                                                   placeholder="Your name here..." />
-                                        </div>
-                                        <button id="join" className="btn btn-default secret-button">
-                                            <span>Join</span></button>
-                                        <button id="startGame" style={{display: 'none'}}
-                                                className="btn btn-default secret-button" type="submit"><span>Start the Game</span>
-                                        </button>
-                                    </form>
+                                    <JoinGame />
                                 </div>
                             </div>
                         </div>
@@ -34,10 +27,7 @@ const Index = () => {
                             <h2>Joined</h2>
                             <div className="row">
                                 <div className="col-md-12">
-                                    <table id="conversation" className="table table-striped">
-                                        <tbody id="registrations">
-                                        </tbody>
-                                    </table>
+                                    <PlayersList />
                                 </div>
                             </div>
                         </div>
@@ -72,5 +62,3 @@ const Index = () => {
         </div>
     )
 };
-
-export default Index;
