@@ -23,18 +23,17 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-websocket")
 	implementation("org.springframework:spring-messaging")
+	implementation("org.springframework.security:spring-security-config:5.3.2.RELEASE")
+	implementation("org.springframework.security:spring-security-web:5.3.2.RELEASE")
+
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("org.jetbrains.kotlin:kotlin-stdlib-js")
 	implementation("org.webjars:webjars-locator-core")
-	implementation("org.webjars:sockjs-client:1.0.2")
+//	implementation("org.webjars:sockjs-client:1.0.2")
 	implementation("org.webjars:stomp-websocket:2.3.3")
 	implementation("org.webjars:bootstrap:3.3.7")
-	implementation("org.webjars:jquery:3.1.1-1")
-	implementation("com.google.code.gson:gson:2.8.5")
 	implementation("org.slf4j:slf4j-api:1.7.5")
 	implementation("io.github.microutils:kotlin-logging:1.7.9")
-	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

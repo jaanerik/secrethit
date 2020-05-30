@@ -41,6 +41,7 @@ open class WebSocketConfig : WebSocketMessageBrokerConfigurer {
 //                    override fun afterHandshake(request: ServerHttpRequest, response: ServerHttpResponse, wsHandler: WebSocketHandler, exception: Exception?) {}
 //                })
                 .addInterceptors(HttpSessionHandshakeInterceptor())
+                .setAllowedOrigins("http://localhost:3000")
                 .withSockJS()
     }
 }
