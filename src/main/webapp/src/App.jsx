@@ -1,8 +1,8 @@
-import React, {Component} from 'react';
+import React, { PureComponent } from 'react';
 import NewIndex from "./Index/NewIndex";
 import Websocket from "./Websocket/Websocket";
 
-class App extends Component {
+class App extends PureComponent {
 
     state = {
         gameState: 'Register',

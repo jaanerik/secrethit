@@ -21,17 +21,6 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 open class WebSocketConfig : WebSocketMessageBrokerConfigurer {
     private val logger = KotlinLogging.logger {}
 
-    @Bean
-    open fun corsConfigurationSource(): CorsConfigurationSource? {
-        val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf("*","**")
-        configuration.allowedMethods = listOf("GET", "POST")
-        val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
-        println(source.corsConfigurations.values.first())
-        return source
-    }
-
     override fun configureMessageBroker(config: MessageBrokerRegistry) {
         logger.debug { "Configuring message broker" }
         config.setApplicationDestinationPrefixes("/app")

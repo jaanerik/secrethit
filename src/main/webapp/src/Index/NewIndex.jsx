@@ -3,8 +3,6 @@ import React from 'react';
 const Index = () => {
     return (
         <div>
-
-
             <section className="secret-slice" id="boxes">
                 <div className="secret-container">
                     <div className="secret-gitter-row">
@@ -72,7 +70,7 @@ const Index = () => {
             	</div>
             </section>
         </div>
-)
+    )
 };
 
 export default Index;
