@@ -7,8 +7,8 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc
 
 @SpringBootApplication
 @EnableWebMvc
-class SecrethitApplication : WebMvcAutoConfiguration()
+open class SecrethitApplication : WebMvcAutoConfiguration()
 
 fun main(args: Array<String>) {
-	SpringApplication.run(SecrethitApplication::class.java, *args)
+    SpringApplication.run(SecrethitApplication::class.java, *args)
 }
