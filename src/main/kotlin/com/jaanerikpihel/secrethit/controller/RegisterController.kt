@@ -1,7 +1,9 @@
 package com.jaanerikpihel.secrethit.controller
 
 import com.jaanerikpihel.secrethit.model.GameState
+import com.jaanerikpihel.secrethit.model.GameState.Companion.INTRODUCTION
 import com.jaanerikpihel.secrethit.model.GameState.Companion.REGISTER
+import com.jaanerikpihel.secrethit.model.GameState.Companion.VOTING
 import com.jaanerikpihel.secrethit.model.Player
 import com.jaanerikpihel.secrethit.model.RegisterMessage
 import mu.KotlinLogging
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.CrossOrigin
 import java.lang.IllegalArgumentException
 import java.time.LocalDateTime
+import kotlin.math.floor
 
 private val logger = KotlinLogging.logger {}
 const val START_MSG = "\$start\$"
@@ -27,7 +30,7 @@ class GreetingController {
     private var messagingTemplate: SimpMessageSendingOperations? = null
     private var allPlayers = emptyList<Player>().toMutableList()
     private val playerNameToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf<String, MessageHeaders>()
-    var gameState = GameState(REGISTER)
+    var gameState = GameState()
 
     @MessageMapping("/register")
     fun processMessageFromClient(
@@ -36,14 +39,19 @@ class GreetingController {
     ) {
         if (message.name == START_MSG) {
             logger.info { "Started game at ${LocalDateTime.now()}" }
-            gameState = GameState(allPlayers.size)
+            gameState = GameState(
+                    gameState = INTRODUCTION, players = allPlayers,
+                    president = allPlayers[floor(Math.random() * allPlayers.size).toInt()]
+            )
+            logger.info { "This is gameState sting: ${gameState.toJSON()}, allPlayers string: $allPlayers" }
             messagingTemplate!!.convertAndSend(
-                    "/topic/registrations",
-                    START_MSG,
+                    "/topic/gameState",
+                    gameState.toJSON(),
                     messageHeaders
             )
             allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run {
                 it.first.role = it.second
+                logger.info { "Sent message to: ${it.first}" }
                 messagingTemplate!!.convertAndSendToUser(
                         it.first.sessionId,
                         "/queue/reply",
@@ -53,21 +61,22 @@ class GreetingController {
             } }
             allPlayers.forEach { logger.info {"${it.name} is ${it.role}" } }
         } else {
-            var player: Player = Player()
+            var player: Player
             if (allPlayers.map { it.name }.contains(message.name)) {
                 //Update sessionId if name already exists. Simple fix for connectivity issues.
                 player = allPlayers.find { it.name == message.name }!!
                 player.sessionId = messageHeaders["simpSessionId"].toString();
                 playerNameToHeaders[player.name] = messageHeaders
             } else {
-                player = Player(messageHeaders["simpSessionId"].toString(), message.name, "", false)
+                player = Player(messageHeaders["simpSessionId"].toString(), message.name, "")
                 playerNameToHeaders[player.name] = messageHeaders
                 allPlayers.add(player)
             }
             logger.info { "Registered a new player: $player" }
+            gameState = GameState(gameState = REGISTER, players = allPlayers)
             messagingTemplate!!.convertAndSend(
-                    "/topic/registrations",
-                    allPlayers,
+                    "/topic/gameState",
+                    gameState.toJSON(),
                     messageHeaders
             )
         }

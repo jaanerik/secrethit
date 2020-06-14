@@ -18,7 +18,6 @@ open class WebSecurityConfig : WebSecurityConfigurerAdapter() {
 
     @Bean
     open fun corsFilter(): CorsFilter {
-        println("corsfilter called")
         return CorsFilter()
     }
 }

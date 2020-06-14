@@ -4,6 +4,10 @@ import JoinGame from "./JoinGame";
 import PlayersList from "./PlayersList";
 
 export default class RegisterPage extends PureComponent {
+    // constructor(props) {
+    //     super(props);
+    // }
+
     render = () => (
         <div>
             <section className="secret-slice" id="boxes">
@@ -19,7 +23,7 @@ export default class RegisterPage extends PureComponent {
                             <h2>Join</h2>
                             <div className="row">
                                 <div className="col-md-6">
-                                    <JoinGame />
+                                    <JoinGame/>
                                 </div>
                             </div>
                         </div>

@@ -26,6 +26,7 @@ dependencies {
 	implementation("org.springframework.security:spring-security-config:5.3.2.RELEASE")
 	implementation("org.springframework.security:spring-security-web:5.3.2.RELEASE")
 
+	implementation("com.google.code.gson:gson:2.8.5")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.webjars:webjars-locator-core")

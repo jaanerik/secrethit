@@ -1,47 +1,88 @@
 package com.jaanerikpihel.secrethit.model
 
+import com.google.gson.Gson
+import com.jaanerikpihel.secrethit.model.GameState.Companion.REGISTER
 
 class GameState() {
-
-    constructor(gameState: String) : this() {
-        this.gameState = gameState
-        this.facPolicies = 0
-        this.libPolicies = 0
-        this.lastGovernment = null
-        this.cardPack = CardPack()
-        this.noPlayers = 0
-    }
-
-    constructor(noPlayers: Int) : this() {
-        this.gameState = STARTED
-        this.facPolicies = 0
-        this.libPolicies = 0
-        this.lastGovernment = null
-        this.cardPack = CardPack()
-        this.noPlayers = noPlayers
-    }
-
-    companion object {
-        const val REGISTER = "Register"
-        const val STARTED = "Started"
-        const val VOTING = "Voting"
-        const val LIB_VICTORY = "LiberalVictory"
-        const val FAC_VICTORY = "FascistVictory"
-    }
 
     var gameState = REGISTER
     var facPolicies: Int = 0
     var libPolicies: Int = 0
     var cardPack: CardPack = CardPack()
     var lastGovernment: Pair<Player, Player>? = null
-    var noPlayers: Int = 0
+    var president: Player? = null
+    var chancellor: Player? = null
+    var players: List<Player>? = null
+    var nullGovernments: Int = 0
+
+   constructor(
+            gameState: String = "",
+            facPolicies: Int = 0,
+            libPolicies: Int = 0,
+            cardPack: CardPack = CardPack(),
+            lastGovernment: Pair<Player, Player>? = null,
+            president: Player? = null,
+            chancellor: Player? = null,
+            players: List<Player>? = null,
+            nullGovernments: Int = 0
+    ) : this() {
+        this.gameState = gameState
+        this.facPolicies = facPolicies
+        this.libPolicies = libPolicies
+        this.lastGovernment = lastGovernment
+        this.cardPack = cardPack
+        this.lastGovernment = lastGovernment
+        this.president = president
+        this.chancellor = chancellor
+        this.players = players
+        this.nullGovernments = nullGovernments
+    }
+    companion object {
+        const val REGISTER = "Register"
+        const val STARTED = "Started"
+        const val VOTING = "Voting"
+        const val INTRODUCTION = "Introduction"
+        const val LIB_VICTORY = "LiberalVictory"
+        const val FAC_VICTORY = "FascistVictory"
+
+    }
+
+    override fun toString(): String {
+        return "GameState(gameState='$gameState', facPolicies=$facPolicies, libPolicies=$libPolicies, cardPack=${cardPack.cards.size}, lastGovernment=$lastGovernment, president=$president, chancellor=$chancellor, players=$players, nullGovernments=$nullGovernments)"
+    }
+
+    fun toJSON(): String {
+        return GameStateShareable(this).toJSON()
+    }
+
+}
+
+class GameStateShareable(gameState: GameState) {
+
+    private var gameState = REGISTER
+    private var fascistCardsPlayed: Int = 0
+    private var liberalCardsPlayed: Int = 0
+    private var cardPackSize: Int = 0
+    private var lastGovernment: Pair<String, String>? = null
+    private var president: String = ""
+    private var chancellor: String = ""
+    private var players: List<String>? = null
+    private var nullGovernments: Int = 0
 
     init {
-        this.gameState = STARTED
-        this.facPolicies = 0
-        this.libPolicies = 0
-        this.lastGovernment = null
-        this.cardPack = CardPack()
+        this.gameState = gameState.gameState
+        this.fascistCardsPlayed = gameState.facPolicies
+        this.liberalCardsPlayed = gameState.libPolicies
+        this.lastGovernment = gameState.lastGovernment?.run { Pair(this.first.name, this.second.name) }
+        this.cardPackSize = gameState.cardPack.cards.size
+        this.president = gameState.president?.name ?: ""
+        this.chancellor = gameState.chancellor?.name ?: ""
+        this.players = gameState.players?.map { it.name }
+        this.nullGovernments = gameState.nullGovernments
+    }
+
+    fun toJSON(): String {
+        return Gson().toJson(this)
     }
 
 }
