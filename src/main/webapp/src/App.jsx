@@ -16,13 +16,14 @@ class App extends PureComponent {
         chancellor: '',
         players: [],
         nullGovernments: 0,
-        lastGovernment: []
+        lastGovernment: [],
+        extraInfo: ''
     };
 
     render = () => <Fragment>
         <SockJsClient
             url='http://localhost:8080/secrethit'
-            topics={['/user/queue/reply', '/topic/registrations', '/topic/gameState']}
+            topics={['/user/queue/reply', '/queue/reply', '/topic/gameState']}
             onMessage={this.handleMessage}
             ref={client => {
                 this.clientRef = client
@@ -39,6 +40,9 @@ class App extends PureComponent {
                 return (<RegisterPage/>);
             case 'Voting':
                 return (<VotingPage/>);
+            case 'Introduction':
+                return (<VotingPage/>);
+
             default:
                 return 'EI OSKA VEEL'
         }
@@ -62,6 +66,10 @@ class App extends PureComponent {
                 this.setState({...msg});
                 console.log('Received gameState: ');
                 console.log(this.state);
+                break;
+            case '/user/queue/reply':
+                console.log('Received message');
+                console.log({...msg});
                 break;
             case '/queue/reply':
                 console.log('Received message');
