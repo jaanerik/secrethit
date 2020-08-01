@@ -14,8 +14,9 @@ class GameState() {
     var chancellor: Player? = null
     var players: List<Player>? = null
     var nullGovernments: Int = 0
+    var extraInfo: String = "{}"
 
-   constructor(
+    constructor(
             gameState: String = "",
             facPolicies: Int = 0,
             libPolicies: Int = 0,
@@ -24,7 +25,8 @@ class GameState() {
             president: Player? = null,
             chancellor: Player? = null,
             players: List<Player>? = null,
-            nullGovernments: Int = 0
+            nullGovernments: Int = 0,
+            extraInfo: String = "{}"
     ) : this() {
         this.gameState = gameState
         this.facPolicies = facPolicies
@@ -36,7 +38,9 @@ class GameState() {
         this.chancellor = chancellor
         this.players = players
         this.nullGovernments = nullGovernments
+        this.extraInfo = extraInfo
     }
+
     companion object {
         const val REGISTER = "Register"
         const val STARTED = "Started"
@@ -68,6 +72,7 @@ class GameStateShareable(gameState: GameState) {
     private var chancellor: String = ""
     private var players: List<String>? = null
     private var nullGovernments: Int = 0
+    private var extraInfo: String = "{}"
 
     init {
         this.gameState = gameState.gameState
@@ -79,6 +84,7 @@ class GameStateShareable(gameState: GameState) {
         this.chancellor = gameState.chancellor?.name ?: ""
         this.players = gameState.players?.map { it.name }
         this.nullGovernments = gameState.nullGovernments
+        this.extraInfo = gameState.extraInfo
     }
 
     fun toJSON(): String {
@@ -89,11 +95,11 @@ class GameStateShareable(gameState: GameState) {
 
 class CardPack {
 
-    var cards: MutableList<String> = (MutableList(11) {"fascist"} + MutableList(6) {"liberal"})
+    var cards: MutableList<String> = (MutableList(11) { "fascist" } + MutableList(6) { "liberal" })
             .shuffled() as MutableList<String>
 
     fun takeN(n: Int): List<String> {
-        val takenCards = cards.toList().subList(0,n)
+        val takenCards = cards.toList().subList(0, n)
         for (i in 0 until n)
             cards.removeAt(0)
         if (cards.isEmpty()) newPack()
@@ -110,7 +116,7 @@ class CardPack {
     }
 
     fun newPack() {
-        cards = (MutableList(11) {"fascist"} + MutableList(6) {"liberal"}).shuffled() as MutableList<String>
+        cards = (MutableList(11) { "fascist" } + MutableList(6) { "liberal" }).shuffled() as MutableList<String>
     }
 
     fun packSize(): Int {
