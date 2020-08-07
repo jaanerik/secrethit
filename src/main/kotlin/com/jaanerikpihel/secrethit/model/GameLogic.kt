@@ -2,6 +2,7 @@ package com.jaanerikpihel.secrethit.model
 
 fun getShuffledRoles(size: Int): List<String> {
     val roles = when (size) {
+        1 -> howManyLibFacWithOutHit(0, 0) //Testing
         2 -> howManyLibFacWithOutHit(1, 0) //Testing
         3 -> howManyLibFacWithOutHit(1, 1) //Testing
         5 -> howManyLibFacWithOutHit(3, 1)
