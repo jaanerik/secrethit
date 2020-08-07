@@ -4,10 +4,12 @@ import SockJsClient from 'react-stomp';
 import GameStateContext from "./GameStateContext";
 import RegisterPage from "./RegisterPage/RegisterPage";
 import VotingPage from "./VotingPage/VotingPage";
+import IntroductionPage from "./IntroductionPage/IntroductionPage";
 
 class App extends PureComponent {
     state = {
         myName: '',
+        myRole: '',
         gameState: 'Register',
         fascistCardsPlayed: 0,
         liberalCardsPlayed: 0,
@@ -41,7 +43,7 @@ class App extends PureComponent {
             case 'Voting':
                 return (<VotingPage/>);
             case 'Introduction':
-                return (<VotingPage/>);
+                return (<IntroductionPage/>);
 
             default:
                 return 'EI OSKA VEEL'
@@ -50,6 +52,14 @@ class App extends PureComponent {
 
     setMyName = (name) => {
         this.setState({myName: name})
+    };
+
+    setMyRole = (role) => {
+        this.setState({myRole: role})
+    };
+
+    setExtraInfo = (extraInfo) => {
+        this.setState({extraInfo: extraInfo})
     };
 
     contextValue = () => ({
@@ -70,10 +80,11 @@ class App extends PureComponent {
             case '/user/queue/reply':
                 console.log('Received message');
                 console.log({...msg});
-                break;
-            case '/queue/reply':
-                console.log('Received message');
-                console.log({...msg});
+                if ('Introduction' in {...msg}) {
+                    console.log(msg['Introduction']);
+                    this.setMyRole(msg['Introduction']['role'].toString());
+                    this.setExtraInfo(msg['Introduction']['extraInfo'].toString());
+                }
                 break;
             default:
                 console.error('Unknown topic received!');
