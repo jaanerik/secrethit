@@ -13,8 +13,9 @@ class GameState() {
     var president: Player? = null
     var chancellor: Player? = null
     var players: List<Player>? = null
-    var nullGovernments: Int = 0
+    var failedGovernments: Int = 0
     var extraInfo: String = "{}"
+    var alivePlayerOrder: List<Player> = emptyList()
 
     constructor(
             gameState: String = "",
@@ -37,7 +38,7 @@ class GameState() {
         this.president = president
         this.chancellor = chancellor
         this.players = players
-        this.nullGovernments = nullGovernments
+        this.failedGovernments = nullGovernments
         this.extraInfo = extraInfo
     }
 
@@ -53,7 +54,7 @@ class GameState() {
     }
 
     override fun toString(): String {
-        return "GameState(gameState='$gameState', facPolicies=$facPolicies, libPolicies=$libPolicies, cardPack=${cardPack.cards.size}, lastGovernment=$lastGovernment, president=$president, chancellor=$chancellor, players=$players, nullGovernments=$nullGovernments)"
+        return "GameState(gameState='$gameState', facPolicies=$facPolicies, libPolicies=$libPolicies, cardPack=${cardPack.cards.size}, lastGovernment=$lastGovernment, president=$president, chancellor=$chancellor, players=$players, nullGovernments=$failedGovernments)"
     }
 
     fun toJSON(): String {
@@ -84,7 +85,7 @@ class GameStateShareable(gameState: GameState) {
         this.president = gameState.president?.name ?: ""
         this.chancellor = gameState.chancellor?.name ?: ""
         this.players = gameState.players?.map { it.name }
-        this.nullGovernments = gameState.nullGovernments
+        this.nullGovernments = gameState.failedGovernments
         this.extraInfo = gameState.extraInfo
     }
 

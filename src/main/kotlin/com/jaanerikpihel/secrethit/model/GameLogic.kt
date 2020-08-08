@@ -21,3 +21,13 @@ private fun howManyLibFacWithOutHit(libCount: Int, facCount: Int): MutableList<S
             MutableList(libCount) { "Liberal" } + MutableList(facCount) { "Fascist" } + listOf("Hitler")
             ) as MutableList<String>
 }
+
+fun getNextPresident(
+        prevPresident: Player,
+        nextPresident: Player? = null,
+        alivePlayersOrder: List<Player>): Player {
+    //TODO: tests
+    return nextPresident ?: alivePlayersOrder[
+            (alivePlayersOrder.indexOf(prevPresident) + 1).rem(alivePlayersOrder.size)
+    ]
+}

@@ -46,7 +46,7 @@ class Controller {
     private var allPlayers = emptyList<Player>().toMutableList()
     private var playerNameToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf()
     private var gameState = GameState()
-    private var yayOrNay = mutableMapOf<Player,String>()
+    private var voterYayOrNayMap = mutableMapOf<Player, String>()
 
     @MessageMapping("/voting")
     fun processMessageFromClient(
@@ -67,28 +67,37 @@ class Controller {
             )
             gameState.extraInfo = ""
         } else {
-            yayOrNay[messageFromPlayer] = message.yayOrNay
+            voterYayOrNayMap[messageFromPlayer] = message.yayOrNay
         }
 
-        if (yayOrNay.keys.size == allPlayers.size) {
+        if (voterYayOrNayMap.keys.size == allPlayers.size) {
             logger.info { "ALL VOTES RECEIVED!" }
             gameState.gameState = VOTE_RESULTS
-            gameState.extraInfo = Gson().toJson(yayOrNay.map { (p, v) ->  mapOf(p.name to v)})
-            messagingTemplate!!.convertAndSend(
-                    TOPIC_GAMESTATE,
-                    gameState.toJSON(),
-                    messageHeaders
-            )
-//            gameState.extraInfo = ""
-//            Timer().schedule(
-//                    object : TimerTask() {
-//                        override fun run() {
-//                            startEnacting(messageHeaders, sha)
-//                        }
-//                    },
-//                    TIME_TO_LEARN_ROLES
-//            )
-
+            gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
+            if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
+                messagingTemplate?.convertAndSendToUser(
+                        gameState.president!!.sessionId,
+                        QUEUE_REPLY,
+                        Gson().toJson(mapOf("Cards" to gameState.cardPack.takeThree()))
+                        );
+                messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+            } else {
+                voterYayOrNayMap = mutableMapOf()
+                gameState.president = getNextPresident(
+                        gameState.president!!,
+                        null,
+                        alivePlayersOrder = gameState.alivePlayerOrder
+                )
+                gameState.failedGovernments++
+                if (gameState.failedGovernments == 3) {
+                    TODO("NOT YET IMPLEMENTED")
+                } else {
+                    gameState.gameState = VOTING
+                    gameState.chancellor = null
+                    gameState.extraInfo = ""
+                    messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+                }
+            }
         }
     }
 
@@ -104,6 +113,7 @@ class Controller {
             addPlayer(message, sha, messageHeaders)
         }
     }
+
     @MessageMapping("/reset")
     fun processMessageFromClient(
             @Payload message: ResetMessage,
@@ -155,7 +165,7 @@ class Controller {
         allPlayers = emptyList<Player>().toMutableList()
         playerNameToHeaders = mutableMapOf()
         gameState = GameState(REGISTER)
-        yayOrNay = mutableMapOf()
+        voterYayOrNayMap = mutableMapOf()
         messagingTemplate!!.convertAndSend(
                 TOPIC_GAMESTATE,
                 gameState.toJSON(),
@@ -187,6 +197,8 @@ class Controller {
                 messageHeaders
         )
         allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run { it.first.role = it.second } }
+        gameState.alivePlayerOrder = allPlayers as List<Player>
+        logger.info { "Alive player order: ${gameState.alivePlayerOrder}" }
         allPlayers.forEach {
             if (it.role == FASCIST) {
                 messagingTemplate?.convertAndSendToUser(
