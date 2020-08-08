@@ -42,6 +42,7 @@ class GameState() {
     }
 
     companion object {
+        const val VOTE_RESULTS = "VoteResults"
         const val REGISTER = "Register"
         const val ENACTING = "Enacting"
         const val VOTING = "Voting"

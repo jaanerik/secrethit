@@ -5,10 +5,6 @@ import GameStateContext from "../GameStateContext";
 export default class JoinGame extends PureComponent {
     static contextType = GameStateContext;
 
-    // constructor(props) {
-    //     super(props);
-    // }
-
     state = {
         name: '',
     };

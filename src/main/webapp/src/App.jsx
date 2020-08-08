@@ -5,6 +5,9 @@ import GameStateContext from "./GameStateContext";
 import RegisterPage from "./RegisterPage/RegisterPage";
 import VotingPage from "./VotingPage/VotingPage";
 import IntroductionPage from "./IntroductionPage/IntroductionPage";
+import EnactingPage from "./EnactingPage/EnactingPage";
+import ResetComponent from "./ResetComponent/ResetComponent";
+import VoteResultsPage from "./VoteResultsPage/VoteResultsPage";
 
 class App extends PureComponent {
     state = {
@@ -19,7 +22,8 @@ class App extends PureComponent {
         players: [],
         nullGovernments: 0,
         lastGovernment: [],
-        extraInfo: ''
+        extraInfo: '',
+        cards: []
     };
 
     render = () => <Fragment>
@@ -32,7 +36,10 @@ class App extends PureComponent {
             }}
         />
         <GameStateContext.Provider value={this.contextValue()}>
-            {this.renderCurrentPage()}
+            <Fragment>
+                {this.renderCurrentPage()}
+                <ResetComponent/>
+            </Fragment>
         </GameStateContext.Provider>
     </Fragment>;
 
@@ -42,8 +49,12 @@ class App extends PureComponent {
                 return (<RegisterPage/>);
             case 'Voting':
                 return (<VotingPage/>);
+            case 'VoteResults':
+                return (<VoteResultsPage/>);
             case 'Introduction':
                 return (<IntroductionPage/>);
+            case 'Enacting':
+                return (<EnactingPage/>);
 
             default:
                 return 'EI OSKA VEEL'
@@ -62,6 +73,10 @@ class App extends PureComponent {
         this.setState({extraInfo: extraInfo})
     };
 
+    setCards = (cards) => {
+        this.setState({cards: cards})
+    };
+
     contextValue = () => ({
         ...this.state,
         sendMessage: this.sendMessage,
@@ -70,7 +85,6 @@ class App extends PureComponent {
 
     handleMessage = (msg, topic) => {
         console.log(topic + " received!");
-        // console.log({...msg});
         switch (topic) {
             case '/topic/gameState':
                 this.setState({...msg});
@@ -84,6 +98,9 @@ class App extends PureComponent {
                     console.log(msg['Introduction']);
                     this.setMyRole(msg['Introduction']['role'].toString());
                     this.setExtraInfo(msg['Introduction']['extraInfo'].toString());
+                }
+                if ('Cards' in {...msg}){
+                    this.setCards(msg['Cards'])
                 }
                 break;
             default:

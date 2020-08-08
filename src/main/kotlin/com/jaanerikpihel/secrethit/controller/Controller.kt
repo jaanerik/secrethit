@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.jaanerikpihel.secrethit.model.*
 import com.jaanerikpihel.secrethit.model.GameState.Companion.ENACTING
 import com.jaanerikpihel.secrethit.model.GameState.Companion.INTRODUCTION
+import com.jaanerikpihel.secrethit.model.GameState.Companion.REGISTER
+import com.jaanerikpihel.secrethit.model.GameState.Companion.VOTE_RESULTS
 import com.jaanerikpihel.secrethit.model.GameState.Companion.VOTING
 import mu.KotlinLogging
 import org.apache.tomcat.util.buf.StringUtils
@@ -17,10 +19,7 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor
 import org.springframework.messaging.simp.SimpMessageSendingOperations
 import org.springframework.messaging.simp.annotation.SendToUser
 import org.springframework.stereotype.Controller
-import org.springframework.web.socket.messaging.SessionConnectedEvent
 import java.beans.PropertyChangeEvent
-import java.beans.PropertyChangeListener
-import java.beans.PropertyChangeSupport
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.floor
@@ -28,6 +27,7 @@ import kotlin.math.floor
 
 private val logger = KotlinLogging.logger {}
 const val START_MSG = "\$start\$"
+const val RESET_MSG = "\$reset\$"
 const val FASCIST = "Fascist"
 const val LIBERAL = "Liberal"
 const val HITLER = "Hitler"
@@ -44,7 +44,7 @@ class Controller {
     @Autowired
     private var messagingTemplate: SimpMessageSendingOperations? = null
     private var allPlayers = emptyList<Player>().toMutableList()
-    private val playerNameToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf()
+    private var playerNameToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf()
     private var gameState = GameState()
     private var yayOrNay = mutableMapOf<Player,String>()
 
@@ -72,13 +72,22 @@ class Controller {
 
         if (yayOrNay.keys.size == allPlayers.size) {
             logger.info { "ALL VOTES RECEIVED!" }
+            gameState.gameState = VOTE_RESULTS
             gameState.extraInfo = Gson().toJson(yayOrNay.map { (p, v) ->  mapOf(p.name to v)})
             messagingTemplate!!.convertAndSend(
                     TOPIC_GAMESTATE,
                     gameState.toJSON(),
                     messageHeaders
             )
-            gameState.extraInfo = ""
+//            gameState.extraInfo = ""
+//            Timer().schedule(
+//                    object : TimerTask() {
+//                        override fun run() {
+//                            startEnacting(messageHeaders, sha)
+//                        }
+//                    },
+//                    TIME_TO_LEARN_ROLES
+//            )
 
         }
     }
@@ -95,10 +104,20 @@ class Controller {
             addPlayer(message, sha, messageHeaders)
         }
     }
+    @MessageMapping("/reset")
+    fun processMessageFromClient(
+            @Payload message: ResetMessage,
+            sha: SimpMessageHeaderAccessor,
+            messageHeaders: MessageHeaders
+    ) {
+        if (message.message == RESET_MSG) {
+            resetGame(messageHeaders)
+        }
+    }
 
     @EventListener
     fun handlePropertyChangeEvent(event: PropertyChangeEvent) {
-        logger.info { "Just logging $event !!!!!!!!!!!!!!!!" }
+        logger.info { "Just logging $event!" }
     }
 
     @MessageExceptionHandler
@@ -124,6 +143,29 @@ class Controller {
         }
         logger.info { "Registered a new player: $player" }
         gameState.players = allPlayers
+        messagingTemplate!!.convertAndSend(
+                TOPIC_GAMESTATE,
+                gameState.toJSON(),
+                messageHeaders
+        )
+    }
+
+    private fun resetGame(messageHeaders: MessageHeaders) {
+        logger.info { "Resetting game." }
+        allPlayers = emptyList<Player>().toMutableList()
+        playerNameToHeaders = mutableMapOf()
+        gameState = GameState(REGISTER)
+        yayOrNay = mutableMapOf()
+        messagingTemplate!!.convertAndSend(
+                TOPIC_GAMESTATE,
+                gameState.toJSON(),
+                messageHeaders
+        )
+    }
+
+    private fun startEnacting(messageHeaders: MessageHeaders, sha: SimpMessageHeaderAccessor) {
+        gameState.gameState = ENACTING
+        logger.info { "Waited ${TIME_TO_LEARN_ROLES / 1000.0} s before setting gamestate to $ENACTING." }
         messagingTemplate!!.convertAndSend(
                 TOPIC_GAMESTATE,
                 gameState.toJSON(),

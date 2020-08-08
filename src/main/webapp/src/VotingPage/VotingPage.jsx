@@ -1,5 +1,6 @@
 import React, {Fragment, PureComponent} from 'react';
 import GameStateContext from "../GameStateContext";
+import CurrentGameStateComponent from "../CurrentGameStateComponent/CurrentGameStateComponent";
 
 export default class VotingPage extends PureComponent {
     static contextType = GameStateContext;
@@ -13,6 +14,7 @@ export default class VotingPage extends PureComponent {
                     </div>
                 </div>
             </section>
+            <CurrentGameStateComponent />
         </Fragment>
     );
 
@@ -75,7 +77,7 @@ export default class VotingPage extends PureComponent {
                 </table>
             </Fragment>
         } else {
-            return <Fragment>Test</Fragment>
+            return <Fragment><h3>President is choosing a chancellor</h3></Fragment>
         }
     }
 };
