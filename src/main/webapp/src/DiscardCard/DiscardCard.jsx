@@ -1,31 +1,92 @@
-import React, {Fragment, PureComponent} from 'react';
-import Card from 'react-bootstrap/Card'
+import React, {Fragment, PureComponent, useState} from 'react';
 import Button from 'react-bootstrap/Button';
-import Overlay from 'react-bootstrap/Overlay'
+import Modal from 'react-bootstrap/Modal'
+import Container from 'react-bootstrap/Container'
+import Row from 'react-bootstrap/Row'
+import Col from 'react-bootstrap/Col'
 import GameStateContext from "../GameStateContext";
+import Image from 'react-bootstrap/Image';
 
+function renderCard(card, sendDiscardRequest) {
+    if (card === null) return null;
+    if (card.toLowerCase() === "liberal") {
+        return <div onClick={() => sendDiscardRequest('liberal')}>
+            <Image src="./img/liberalPolicy.png" rounded/>
+            {() => {if (card === "LIBERAL") return <p>(OLD)</p>}}
+        </div>
+    }
+    if (card.toLowerCase() === 'fascist') {
+        return (<div onClick={() => sendDiscardRequest('fascist')}>
+            <Image src="./img/fascistPolicy.png" rounded/>
+            {() => {if (card === "FASCIST") return <p>(OLD)</p>}}
+        </div>)
+    }
+    return null
+}
+
+function CardsModal(props) {
+    return (
+        <Modal show={props.show} onHide={() => {
+        }} aria-labelledby="contained-modal-title-vcenter">
+            <Modal.Body className="show-grid">
+                <Container>
+                    <Row>
+                        <Col xs={4} md={3}>
+                            {renderCard(props.firstCard, props.sendDiscardRequest)}
+                        </Col>
+                        <Col xs={4} md={3}>
+                            {renderCard(props.secondCard, props.sendDiscardRequest)}
+                        </Col>
+                        <Col xs={4} md={3}>
+                            {renderCard(props.thirdCard, props.sendDiscardRequest)}
+                        </Col>
+                    </Row>
+                </Container>
+            </Modal.Body>
+        </Modal>
+    );
+}
 export default class DiscardCard extends PureComponent {
     static contextType = GameStateContext;
 
+    state = {
+        show: false
+    };
+
+    changeShow = () => {
+        this.setState({show: !this.state.show}, () => {
+            console.log('Changed: ', this.state.show);
+        });
+    };
+
+
     render = () => (
         <Fragment>
-            //TODO: <Overlay/>
-            <Card style={{ width: '18rem' }}>
-                <Card.Img variant="top" src="holder.js/100px180" />
-                <Card.Body>
-                    <Card.Title>Card Title</Card.Title>
-                    <Card.Text>
-                        Some quick example text to build on the card title and make up the bulk of
-                        the card's content.
-                    </Card.Text>
-                    <Button variant="primary">Go somewhere</Button>
-                </Card.Body>
-            </Card>
+            <Button variant="primary" onClick={() => this.changeShow()} className="btn btn-default secret-button">
+                Choose which card to discard
+            </Button>
+
+            <CardsModal
+                show={this.state.show}
+                sendDiscardRequest={(card) => this.sendDiscardRequest(card)}
+                firstCard={this.context.cards[0]}
+                secondCard={this.context.cards[1]}
+                thirdCard={this.sendThirdCard()}
+            />
         </Fragment>
     );
 
-    sendResetRequest = () => {
-        console.log('Sending reset request ');
-        this.context.sendMessage('/app/reset', {message: "$reset$"})
+    sendThirdCard = () => {
+        if (this.context.cards.length === 2) return null;
+        else return this.context.cards[2];
     };
+
+    sendDiscardRequest = (card) => {
+        const indexOfDiscardedCard = this.context.cards.indexOf(card);
+        this.context.cards.splice(indexOfDiscardedCard, 1);
+        this.context.sendMessage('/app/discard', {cards: this.context.cards});
+        console.log('Discarded ', this.context.cards);
+        this.context.cards = [];
+        this.context.extraInfo = ""
+    }
 }

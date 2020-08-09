@@ -14,12 +14,6 @@ export default class CurrentGameStateComponent extends PureComponent {
                 <div className="secret-container">
                     <div className="secret-gitter-row">
                         <table className="gameStateTable">
-                            <thead>
-                            <tr>
-                                <th>Voter</th>
-                                <th>Result</th>
-                            </tr>
-                            </thead>
                             <tbody>
                             <tr>
                                 <td className="attr">President</td>

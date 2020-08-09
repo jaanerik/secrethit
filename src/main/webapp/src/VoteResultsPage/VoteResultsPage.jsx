@@ -28,6 +28,12 @@ export default class VoteResultsPage extends PureComponent {
 
     renderResults = () => {
             return <table id="conversation" className="gameStateTable">
+                <thead>
+                <tr>
+                    <th>Voter</th>
+                    <th>Result</th>
+                </tr>
+                </thead>
                 <tbody id="registrations">
                 {JSON.parse(this.context.extraInfo).map(this.renderVote)}
                 </tbody>

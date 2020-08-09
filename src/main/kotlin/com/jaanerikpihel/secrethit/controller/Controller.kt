@@ -75,13 +75,12 @@ class Controller {
             gameState.gameState = VOTE_RESULTS
             gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
             if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
-                messagingTemplate?.convertAndSendToUser(
-                        gameState.president!!.sessionId,
-                        QUEUE_REPLY,
-                        Gson().toJson(mapOf("Cards" to gameState.cardPack.takeThree()))
-                        );
+                val cards = Gson().toJson(mapOf("Cards" to gameState.cardPack.takeThree()))
+                logger.info { "Yays have it, sending ${cards}." }
+                messagingTemplate!!.convertAndSendToUser(gameState.president!!.sessionId, QUEUE_REPLY, cards);
                 messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
             } else {
+                logger.info { "Nays have it." }
                 voterYayOrNayMap = mutableMapOf()
                 gameState.president = getNextPresident(
                         gameState.president!!,
@@ -111,6 +110,36 @@ class Controller {
             startGame(messageHeaders)
         } else {
             addPlayer(message, sha, messageHeaders)
+        }
+    }
+
+    @MessageMapping("/discard")
+    fun processMessageFromClient(
+            @Payload message: DiscardMessage,
+            sha: SimpMessageHeaderAccessor,
+            messageHeaders: MessageHeaders
+    ) {
+        logger.info { "Received from president: ${message.cards}" }
+        if (message.cards.size == 2) {
+            val cards = Gson().toJson(mapOf("Cards" to message.cards))
+            messagingTemplate!!.convertAndSendToUser(gameState.chancellor!!.sessionId, QUEUE_REPLY, cards);
+        }
+        if (message.cards.size == 1) {
+            if (message.cards[0].toLowerCase() == LIBERAL.toLowerCase()) {
+                gameState.libPolicies++
+            } else {
+                gameState.facPolicies++
+            }
+            voterYayOrNayMap = mutableMapOf()
+            gameState.president = getNextPresident(
+                    gameState.president!!,
+                    null,
+                    alivePlayersOrder = gameState.alivePlayerOrder
+            )
+            gameState.gameState = VOTING
+            gameState.chancellor = null
+            gameState.extraInfo = ""
+            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
         }
     }
 
