@@ -1,4 +1,4 @@
-import React, {Fragment, PureComponent, useState} from 'react';
+import React, {Fragment, PureComponent} from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal'
 import Container from 'react-bootstrap/Container'
@@ -7,21 +7,20 @@ import Col from 'react-bootstrap/Col'
 import GameStateContext from "../GameStateContext";
 import Image from 'react-bootstrap/Image';
 
-function renderCard(card, sendDiscardRequest) {
+function renderCard(card, sendDiscardRequest, changeShow, setCardsEmpty) {
     if (card === null) return null;
-    if (card.toLowerCase() === "liberal") {
-        return <div onClick={() => sendDiscardRequest('liberal')}>
-            <Image src="./img/liberalPolicy.png" rounded/>
-            {() => {if (card === "LIBERAL") return <p>(OLD)</p>}}
-        </div>
-    }
-    if (card.toLowerCase() === 'fascist') {
-        return (<div onClick={() => sendDiscardRequest('fascist')}>
-            <Image src="./img/fascistPolicy.png" rounded/>
-            {() => {if (card === "FASCIST") return <p>(OLD)</p>}}
-        </div>)
-    }
-    return null
+    return <div onClick={() => {
+        // setCardsEmpty();
+        changeShow();
+        sendDiscardRequest(card.toLowerCase());
+    }}>
+        <Image src={card.toLowerCase() === 'liberal' ?
+            "./img/liberalPolicy.png" : "./img/fascistPolicy.png"
+        } rounded/>
+        {() => {
+            if (card === "LIBERAL") return <p>(OLD)</p>
+        }}
+    </div>
 }
 
 function CardsModal(props) {
@@ -31,21 +30,20 @@ function CardsModal(props) {
             <Modal.Body className="show-grid">
                 <Container>
                     <Row>
-                        <Col xs={4} md={3}>
-                            {renderCard(props.firstCard, props.sendDiscardRequest)}
-                        </Col>
-                        <Col xs={4} md={3}>
-                            {renderCard(props.secondCard, props.sendDiscardRequest)}
-                        </Col>
-                        <Col xs={4} md={3}>
-                            {renderCard(props.thirdCard, props.sendDiscardRequest)}
-                        </Col>
+                        {props.cards.filter(it => it != null).map((card, index) => {
+                            return <Col xs={4} md={3} key={index}>
+                                {renderCard(
+                                    card, props.sendDiscardRequest, props.changeShow, props.setCardsEmpty
+                                )}
+                            </Col>
+                        })}
                     </Row>
                 </Container>
             </Modal.Body>
         </Modal>
     );
 }
+
 export default class DiscardCard extends PureComponent {
     static contextType = GameStateContext;
 
@@ -55,10 +53,15 @@ export default class DiscardCard extends PureComponent {
 
     changeShow = () => {
         this.setState({show: !this.state.show}, () => {
-            console.log('Changed: ', this.state.show);
+            console.log('Changed modal show: ', this.state.show);
         });
     };
 
+    setCardsEmpty = () => {
+        this.setState({cards: []}, () => {
+            console.log('Changed cards: ', this.state.cards);
+        });
+    };
 
     render = () => (
         <Fragment>
@@ -69,24 +72,21 @@ export default class DiscardCard extends PureComponent {
             <CardsModal
                 show={this.state.show}
                 sendDiscardRequest={(card) => this.sendDiscardRequest(card)}
-                firstCard={this.context.cards[0]}
-                secondCard={this.context.cards[1]}
-                thirdCard={this.sendThirdCard()}
+                cards={this.context.cards}
+                changeShow={this.changeShow}
+                setCardsEmpty={this.setCardsEmpty}
             />
         </Fragment>
     );
-
-    sendThirdCard = () => {
-        if (this.context.cards.length === 2) return null;
-        else return this.context.cards[2];
-    };
 
     sendDiscardRequest = (card) => {
         const indexOfDiscardedCard = this.context.cards.indexOf(card);
         this.context.cards.splice(indexOfDiscardedCard, 1);
         this.context.sendMessage('/app/discard', {cards: this.context.cards});
-        console.log('Discarded ', this.context.cards);
-        this.context.cards = [];
+        console.log('Now cards ', this.context.cards);
+        // this.context.cards = [];
+        this.props.setCards([]);
+        console.log('Now cards2 ', this.context.cards);
         this.context.extraInfo = ""
     }
 }

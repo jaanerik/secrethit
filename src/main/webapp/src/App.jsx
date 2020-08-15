@@ -50,7 +50,7 @@ class App extends PureComponent {
             case 'Voting':
                 return (<VotingPage/>);
             case 'VoteResults':
-                return (<VoteResultsPage/>);
+                return (<VoteResultsPage setCards={this.setCards}/>);
             case 'Introduction':
                 return (<IntroductionPage/>);
             case 'Enacting':
@@ -88,14 +88,12 @@ class App extends PureComponent {
         switch (topic) {
             case '/topic/gameState':
                 this.setState({...msg});
-                console.log('Received gameState: ');
                 console.log(this.state);
+                console.log('Currently cards: ', this.state.cards);
                 break;
             case '/user/queue/reply':
-                console.log('Received message');
                 console.log({...msg});
                 if ('Introduction' in {...msg}) {
-                    console.log(msg['Introduction']);
                     this.setMyRole(msg['Introduction']['role'].toString());
                     this.setExtraInfo(msg['Introduction']['extraInfo'].toString());
                 }

@@ -54,7 +54,9 @@ class GameState() {
     }
 
     override fun toString(): String {
-        return "GameState(gameState='$gameState', facPolicies=$facPolicies, libPolicies=$libPolicies, cardPack=${cardPack.cards.size}, lastGovernment=$lastGovernment, president=$president, chancellor=$chancellor, players=$players, nullGovernments=$failedGovernments)"
+        return "GameState(gameState='$gameState', facPolicies=$facPolicies, libPolicies=$libPolicies, " +
+                "cardPack=${cardPack.cards.size}, lastGovernment=$lastGovernment, president=$president, " +
+                "chancellor=$chancellor, players=$players, nullGovernments=$failedGovernments)"
     }
 
     fun toJSON(): String {
@@ -102,9 +104,10 @@ class CardPack {
 
     fun takeN(n: Int): List<String> {
         val takenCards = cards.toList().subList(0, n)
-        for (i in 0 until n)
+        for (i in 0 until n) {
             cards.removeAt(0)
-        if (cards.isEmpty()) newPack()
+            if (cards.isEmpty()) newPack()
+        }
         return takenCards
     }
 
@@ -120,9 +123,4 @@ class CardPack {
     fun newPack() {
         cards = (MutableList(11) { "fascist" } + MutableList(6) { "liberal" }).shuffled() as MutableList<String>
     }
-
-    fun packSize(): Int {
-        return cards.size
-    }
-
 }

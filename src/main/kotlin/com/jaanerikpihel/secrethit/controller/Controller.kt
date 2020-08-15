@@ -54,50 +54,7 @@ class Controller {
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
     ) {
-        val messageFromPlayer = allPlayers.find { it.sessionId == sha.user!!.name }!!
-        logger.info { "Message received from $messageFromPlayer" }
-        if (message.chancellor.isNotBlank() &&
-                allPlayers.find { it.sessionId == sha.user!!.name } == gameState.president) {
-            gameState.chancellor = allPlayers.find { it.name == message.chancellor }
-            gameState.extraInfo = CANDIDATE
-            messagingTemplate!!.convertAndSend(
-                    TOPIC_GAMESTATE,
-                    gameState.toJSON(),
-                    messageHeaders
-            )
-            gameState.extraInfo = ""
-        } else {
-            voterYayOrNayMap[messageFromPlayer] = message.yayOrNay
-        }
-
-        if (voterYayOrNayMap.keys.size == allPlayers.size) {
-            logger.info { "ALL VOTES RECEIVED!" }
-            gameState.gameState = VOTE_RESULTS
-            gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
-            if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
-                val cards = Gson().toJson(mapOf("Cards" to gameState.cardPack.takeThree()))
-                logger.info { "Yays have it, sending ${cards}." }
-                messagingTemplate!!.convertAndSendToUser(gameState.president!!.sessionId, QUEUE_REPLY, cards);
-                messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
-            } else {
-                logger.info { "Nays have it." }
-                voterYayOrNayMap = mutableMapOf()
-                gameState.president = getNextPresident(
-                        gameState.president!!,
-                        null,
-                        alivePlayersOrder = gameState.alivePlayerOrder
-                )
-                gameState.failedGovernments++
-                if (gameState.failedGovernments == 3) {
-                    TODO("NOT YET IMPLEMENTED")
-                } else {
-                    gameState.gameState = VOTING
-                    gameState.chancellor = null
-                    gameState.extraInfo = ""
-                    messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
-                }
-            }
-        }
+        handleVoteOrChancellorCandidate(sha, message, messageHeaders)
     }
 
     @MessageMapping("/register")
@@ -119,28 +76,7 @@ class Controller {
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
     ) {
-        logger.info { "Received from president: ${message.cards}" }
-        if (message.cards.size == 2) {
-            val cards = Gson().toJson(mapOf("Cards" to message.cards))
-            messagingTemplate!!.convertAndSendToUser(gameState.chancellor!!.sessionId, QUEUE_REPLY, cards);
-        }
-        if (message.cards.size == 1) {
-            if (message.cards[0].toLowerCase() == LIBERAL.toLowerCase()) {
-                gameState.libPolicies++
-            } else {
-                gameState.facPolicies++
-            }
-            voterYayOrNayMap = mutableMapOf()
-            gameState.president = getNextPresident(
-                    gameState.president!!,
-                    null,
-                    alivePlayersOrder = gameState.alivePlayerOrder
-            )
-            gameState.gameState = VOTING
-            gameState.chancellor = null
-            gameState.extraInfo = ""
-            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
-        }
+        handleDiscard(message, messageHeaders)
     }
 
     @MessageMapping("/reset")
@@ -164,6 +100,82 @@ class Controller {
     fun handleException(exception: Throwable): String? {
         logger.error { "Sending error" }
         return exception.message
+    }
+
+    private fun handleDiscard(message: DiscardMessage, messageHeaders: MessageHeaders) {
+        logger.info { "Received from president: ${message.cards}" }
+        if (message.cards.size == 2) {
+            val cards = Gson().toJson(mapOf("Cards" to message.cards))
+            logger.info { "Chancellor currently ${gameState.chancellor!!.name}, sending cards $cards" }
+            messagingTemplate!!.convertAndSendToUser(gameState.chancellor!!.sessionId, QUEUE_REPLY, cards);
+        }
+        if (message.cards.size == 1) {
+            if (message.cards[0].toLowerCase() == LIBERAL.toLowerCase()) {
+                gameState.libPolicies++
+            } else {
+                gameState.facPolicies++
+            }
+            voterYayOrNayMap = mutableMapOf()
+            gameState.president = getNextPresident(
+                    gameState.president!!,
+                    null,
+                    alivePlayersOrder = gameState.alivePlayerOrder
+            )
+            gameState.gameState = VOTING
+            gameState.chancellor = null
+            gameState.extraInfo = ""
+            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+        }
+    }
+
+    private fun handleVoteOrChancellorCandidate(sha: SimpMessageHeaderAccessor, message: VotingMessage, messageHeaders: MessageHeaders) {
+        val messageFromPlayer = allPlayers.find { it.sessionId == sha.user!!.name }!!
+        logger.info { "Message received from $messageFromPlayer" }
+        if (message.chancellor.isNotBlank() &&
+                allPlayers.find { it.sessionId == sha.user!!.name } == gameState.president) {
+            gameState.chancellor = allPlayers.find { it.name == message.chancellor }
+            gameState.extraInfo = CANDIDATE
+            messagingTemplate!!.convertAndSend(
+                    TOPIC_GAMESTATE,
+                    gameState.toJSON(),
+                    messageHeaders
+            )
+            gameState.extraInfo = ""
+        } else {
+            voterYayOrNayMap[messageFromPlayer] = message.yayOrNay
+        }
+
+        if (voterYayOrNayMap.keys.size == allPlayers.size) {
+            logger.info { "ALL VOTES RECEIVED!" }
+            gameState.gameState = VOTE_RESULTS
+            gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
+            if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
+                val cards = Gson().toJson(mapOf("Cards" to gameState.cardPack.takeThree()))
+                logger.info { "Yays have it, sending ${cards}." }
+                gameState.failedGovernments = 0
+                messagingTemplate!!.convertAndSendToUser(gameState.president!!.sessionId, QUEUE_REPLY, cards);
+                messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+            } else {
+                logger.info { "Nays have it." }
+                voterYayOrNayMap = mutableMapOf()
+                gameState.president = getNextPresident(
+                        gameState.president!!,
+                        null,
+                        alivePlayersOrder = gameState.alivePlayerOrder
+                )
+                gameState.failedGovernments++
+                if (gameState.failedGovernments == 3) {
+                    if (gameState.cardPack.takeN(1)[0] == LIBERAL.toLowerCase()) gameState.libPolicies++
+                    else gameState.facPolicies++
+                    gameState.failedGovernments = 0
+
+                }
+                gameState.gameState = VOTING
+                gameState.chancellor = null
+                gameState.extraInfo = ""
+                messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+            }
+        }
     }
 
     private fun addPlayer(message: RegisterMessage, sha: SimpMessageHeaderAccessor, messageHeaders: MessageHeaders) {
@@ -195,16 +207,6 @@ class Controller {
         playerNameToHeaders = mutableMapOf()
         gameState = GameState(REGISTER)
         voterYayOrNayMap = mutableMapOf()
-        messagingTemplate!!.convertAndSend(
-                TOPIC_GAMESTATE,
-                gameState.toJSON(),
-                messageHeaders
-        )
-    }
-
-    private fun startEnacting(messageHeaders: MessageHeaders, sha: SimpMessageHeaderAccessor) {
-        gameState.gameState = ENACTING
-        logger.info { "Waited ${TIME_TO_LEARN_ROLES / 1000.0} s before setting gamestate to $ENACTING." }
         messagingTemplate!!.convertAndSend(
                 TOPIC_GAMESTATE,
                 gameState.toJSON(),

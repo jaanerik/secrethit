@@ -22,7 +22,7 @@ export default class VoteResultsPage extends PureComponent {
     );
 
     renderCards = () => {
-        if (this.context.cards.length !== 0) return <DiscardCard />;
+        if (this.context.cards.length !== 0) return <DiscardCard setCards={this.props.setCards} />;
         else return null
     };
 
