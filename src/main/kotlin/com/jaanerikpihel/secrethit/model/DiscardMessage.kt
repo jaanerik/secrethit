@@ -7,5 +7,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class DiscardMessage (
         @JsonProperty("cards")
-        var cards: List<String>
+        val cards: List<String>,
+        @JsonProperty("discardedCard")
+        val discardedCard: String
 )

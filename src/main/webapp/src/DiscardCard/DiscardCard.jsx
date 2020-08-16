@@ -81,8 +81,9 @@ export default class DiscardCard extends PureComponent {
 
     sendDiscardRequest = (card) => {
         const indexOfDiscardedCard = this.context.cards.indexOf(card);
+        const discardedCard = this.context.cards[indexOfDiscardedCard];
         this.context.cards.splice(indexOfDiscardedCard, 1);
-        this.context.sendMessage('/app/discard', {cards: this.context.cards});
+        this.context.sendMessage('/app/discard', {cards: this.context.cards, discardedCard: discardedCard});
         console.log('Now cards ', this.context.cards);
         // this.context.cards = [];
         this.props.setCards([]);

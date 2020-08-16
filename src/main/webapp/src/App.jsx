@@ -96,8 +96,9 @@ class App extends PureComponent {
                 if ('Introduction' in {...msg}) {
                     this.setMyRole(msg['Introduction']['role'].toString());
                     this.setExtraInfo(msg['Introduction']['extraInfo'].toString());
-                }
-                if ('Cards' in {...msg}){
+                } else if ('peekedCards' in {...msg}) {
+                    //TODO: showing these cards in a modal?
+                } else if ('Cards' in {...msg}){
                     this.setCards(msg['Cards'])
                 }
                 break;

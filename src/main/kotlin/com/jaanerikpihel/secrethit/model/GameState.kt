@@ -102,7 +102,9 @@ class CardPack {
     var cards: MutableList<String> = (MutableList(11) { "fascist" } + MutableList(6) { "liberal" })
             .shuffled() as MutableList<String>
 
-    fun takeN(n: Int): List<String> {
+    var discardPile: MutableList<String> = mutableListOf()
+
+    fun drawN(n: Int): List<String> {
         val takenCards = cards.toList().subList(0, n)
         for (i in 0 until n) {
             cards.removeAt(0)
@@ -111,16 +113,29 @@ class CardPack {
         return takenCards
     }
 
-    fun takeThree(): List<String> {
+    fun drawThree(): List<String> {
         if (cards.size < 3) {
             val howManyNew = 3 - cards.size
-            val oldCards = takeN(cards.size)
-            return oldCards.map { it.toUpperCase() } + takeN(howManyNew)
+            val oldCards = drawN(cards.size)
+            return oldCards.map { it.toUpperCase() } + drawN(howManyNew)
         }
-        return takeN(3)
+        return drawN(3)
     }
 
-    fun newPack() {
-        cards = (MutableList(11) { "fascist" } + MutableList(6) { "liberal" }).shuffled() as MutableList<String>
+    fun addToDiscardPile(card: String) {
+        discardPile.add(card)
+        if (cards.size < 3) discardPile = discardPile.shuffled() as MutableList<String>
+    }
+
+    fun peekThree(): List<String> {
+        return if (cards.size < 3)
+            listOf(cards, discardPile.subList(0, 3-cards.size)).flatten()
+         else cards.subList(0, 3)
+
+    }
+
+    private fun newPack() {
+        cards = discardPile //already shuffled in addToDiscardPile
+        discardPile = mutableListOf()
     }
 }
