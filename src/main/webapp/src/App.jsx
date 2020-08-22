@@ -21,8 +21,9 @@ class App extends PureComponent {
         chancellor: '',
         players: [],
         nullGovernments: 0,
-        lastGovernment: [],
+        lastGovernment: {first: '', second: ''},
         extraInfo: '',
+        presidentialPower: '',
         cards: []
     };
 
@@ -77,10 +78,15 @@ class App extends PureComponent {
         this.setState({cards: cards})
     };
 
+    setPresidentialPower = (power) => {
+        this.setState({presidentialPower: power})
+    };
+
     contextValue = () => ({
         ...this.state,
         sendMessage: this.sendMessage,
-        setMyName: this.setMyName
+        setMyName: this.setMyName,
+        setCards: this.setCards
     });
 
     handleMessage = (msg, topic) => {
@@ -93,13 +99,24 @@ class App extends PureComponent {
                 break;
             case '/user/queue/reply':
                 console.log({...msg});
-                if ('Introduction' in {...msg}) {
-                    this.setMyRole(msg['Introduction']['role'].toString());
-                    this.setExtraInfo(msg['Introduction']['extraInfo'].toString());
-                } else if ('peekedCards' in {...msg}) {
-                    //TODO: showing these cards in a modal?
-                } else if ('Cards' in {...msg}){
-                    this.setCards(msg['Cards'])
+                const key = Object.keys({...msg})[0];
+                switch (key) {
+                    case 'Introduction':
+                        this.setMyRole(msg[key]['role'].toString());
+                        this.setExtraInfo(msg[key]['extraInfo'].toString());
+                        break;
+                    case 'presidentialPower':
+                        const presidentialPowerObj = {...msg[key]};
+                        if (Object.keys({...presidentialPowerObj})[0] === 'peekedCards') {
+                            this.setPresidentialPower('peekedCards');
+                            console.log('Peeked cards: ', presidentialPowerObj['peekedCards']);
+                        }
+                        this.setCards(presidentialPowerObj['peekedCards']);
+                        break;
+                    case 'Cards':
+                        this.setCards(msg['Cards']);
+                        break;
+                    default: console.error('Weirdness handling queue reply.')
                 }
                 break;
             default:

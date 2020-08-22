@@ -32,10 +32,12 @@ const val LIBERAL = "Liberal"
 const val HITLER = "Hitler"
 const val YAY = "Yay"
 const val NAY = "Nay"
-const val TIME_TO_LEARN_ROLES = 1500L
+const val TIME_TO_LEARN_ROLES = 15000L
 const val CANDIDATE = "Candidate"
 const val TOPIC_GAMESTATE = "/topic/gameState"
 const val QUEUE_REPLY = "/queue/reply"
+const val PRESIDENTIAL_POWER = "presidentialPower"
+const val PEEKED_CARDS = "peekedCards"
 
 @Controller
 class Controller {
@@ -97,36 +99,44 @@ class Controller {
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     fun handleException(exception: Throwable): String? {
-        logger.error { "Sending error" }
+        logger.error { "Sending error ${exception.message}" }
         return exception.message
     }
 
     private fun handleDiscard(message: DiscardMessage, messageHeaders: MessageHeaders) {
         gameState.cardPack.addToDiscardPile(message.discardedCard)
-        logger.info { "Received from president: ${message.cards} and discarded ${message.discardedCard}" }
-        if (message.cards.size == 2) {
+        val isPresident = message.cards.size == 2
+        if (isPresident) {
+            logger.info { "Received pres: ${message.cards} (discarded ${message.discardedCard})" }
             val cards = Gson().toJson(mapOf("Cards" to message.cards))
-            logger.info { "Chancellor currently ${gameState.chancellor!!.name}, sending cards $cards" }
             messagingTemplate!!.convertAndSendToUser(gameState.chancellor!!.sessionId, QUEUE_REPLY, cards);
-        }
-        if (message.cards.size == 1) {
-            if (message.cards[0].toLowerCase() == LIBERAL.toLowerCase()) {
+        } else {
+            logger.info { "Received chan: ${message.cards} (discarded ${message.discardedCard})" }
+            val isCardLiberal = message.cards[0].toLowerCase() == LIBERAL.toLowerCase()
+            if (isCardLiberal) {
                 gameState.libPolicies++
             } else {
                 gameState.facPolicies++
                 handlePresidentialPowers()
             }
-            voterYayOrNayMap = mutableMapOf()
-            gameState.president = getNextPresident(
-                    gameState.president!!,
-                    null,
-                    alivePlayersOrder = gameState.alivePlayerOrder
+            Timer().schedule(
+                    object : TimerTask() {
+                        override fun run() {
+                            voterYayOrNayMap = mutableMapOf()
+                            gameState.lastGovernment = Pair(gameState.president!!, gameState.chancellor!!)
+                            gameState.president = getNextPresident(
+                                    gameState.president!!,
+                                    null,
+                                    alivePlayersOrder = gameState.alivePlayerOrder
+                            )
+                            gameState.gameState = VOTING
+                            gameState.chancellor = null
+                            gameState.extraInfo = ""
+                            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+                        }
+                    },
+                    TIME_TO_LEARN_ROLES
             )
-            gameState.gameState = VOTING
-            gameState.chancellor = null
-            gameState.extraInfo = ""
-            gameState.lastGovernment = Pair(gameState.president!!, gameState.chancellor!!)
-            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
         }
     }
 
@@ -139,21 +149,21 @@ class Controller {
          */
         when {
             gameState.alivePlayerOrder.size <= 6 -> when (gameState.facPolicies) {
-                3 -> sendPresidentThreeTopCards()
-                4, 5 -> askPresidentToKillPlayer()
+                1, 3 -> sendPresidentThreeTopCards()
+//                4, 5 -> askPresidentToKillPlayer()
             }
             gameState.alivePlayerOrder.size <= 8 -> when (gameState.facPolicies) {
-                2 -> askPresidentToExamineParty()
-                3 -> askPresidentToPickNextPresident()
-                4 -> askPresidentToKillPlayer()
-                5 -> askPresidentToKillPlayer()
+//                2 -> askPresidentToExamineParty()
+//                3 -> askPresidentToPickNextPresident()
+//                4 -> askPresidentToKillPlayer()
+//                5 -> askPresidentToKillPlayer()
             }
             else -> when (gameState.facPolicies) {
-                1 -> askPresidentToExamineParty()
-                2 -> askPresidentToExamineParty()
-                3 -> askPresidentToPickNextPresident()
-                4 -> askPresidentToKillPlayer()
-                5 -> askPresidentToKillPlayer()
+//                1 -> askPresidentToExamineParty()
+//                2 -> askPresidentToExamineParty()
+//                3 -> askPresidentToPickNextPresident()
+//                4 -> askPresidentToKillPlayer()
+//                5 -> askPresidentToKillPlayer()
             }
         }
     }
@@ -171,15 +181,16 @@ class Controller {
     }
 
     private fun sendPresidentThreeTopCards() {
+        logger.info { "Sending cards for prev pres to peek: ${gameState.cardPack.peekThree()}" }
         messagingTemplate!!.convertAndSendToUser(
                 gameState.president!!.sessionId, QUEUE_REPLY,
-                Gson().toJson(mapOf("peekedCards" to gameState.cardPack.peekThree()))
+                Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(PEEKED_CARDS to gameState.cardPack.peekThree())))
         );
     }
 
     private fun handleVoteOrChancellorCandidate(sha: SimpMessageHeaderAccessor, message: VotingMessage, messageHeaders: MessageHeaders) {
         val messageFromPlayer = allPlayers.find { it.sessionId == sha.user!!.name }!!
-        logger.info { "Message received from $messageFromPlayer" }
+//        logger.info { "Message received from $messageFromPlayer" }
         if (message.chancellor.isNotBlank() &&
                 allPlayers.find { it.sessionId == sha.user!!.name } == gameState.president) {
             gameState.chancellor = allPlayers.find { it.name == message.chancellor }
@@ -195,7 +206,6 @@ class Controller {
         }
 
         if (voterYayOrNayMap.keys.size == allPlayers.size) {
-            logger.info { "ALL VOTES RECEIVED!" }
             gameState.gameState = VOTE_RESULTS
             gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
             if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
@@ -241,7 +251,10 @@ class Controller {
             playerNameToHeaders[player.name] = messageHeaders
             allPlayers.add(player)
         }
-        logger.info { "Registered a new player: $player" }
+        logger.info {
+            "Registered a new player: $player, " +
+                    "total number of alive players=${gameState.alivePlayerOrder.size}"
+        }
         gameState.players = allPlayers
         messagingTemplate!!.convertAndSend(
                 TOPIC_GAMESTATE,
@@ -277,7 +290,7 @@ class Controller {
                 messageHeaders
         )
         allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run { it.first.role = it.second } }
-        gameState.alivePlayerOrder = allPlayers as List<Player>
+        gameState.alivePlayerOrder = allPlayers.shuffled()
         logger.info { "Alive player order: ${gameState.alivePlayerOrder}" }
         allPlayers.forEach {
             if (it.role == FASCIST) {

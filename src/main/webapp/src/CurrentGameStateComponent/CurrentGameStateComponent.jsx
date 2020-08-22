@@ -40,12 +40,12 @@ export default class CurrentGameStateComponent extends PureComponent {
                                 <td>{this.context.liberalCardsPlayed}</td>
                             </tr>
                             <tr>
-                                <td>Players</td>
+                                <td className="attr">Players</td>
                                 <td>{this.context.players.length}</td>
                             </tr>
                             <tr>
                                 <td className="attr">Last government</td>
-                                <td>{this.context.lastGovernment}</td>
+                                <td>{this.context.lastGovernment[0] + ' and ' + this.context.lastGovernment[1]}</td>
                             </tr>
                             </tbody>
                         </table>

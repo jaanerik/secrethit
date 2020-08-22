@@ -14,7 +14,7 @@ class GameState() {
     var chancellor: Player? = null
     var players: List<Player>? = null
     var failedGovernments: Int = 0
-    var extraInfo: String = "{}"
+    var extraInfo: String = ""
     var alivePlayerOrder: List<Player> = emptyList()
 
     constructor(
@@ -71,7 +71,7 @@ class GameStateShareable(gameState: GameState) {
     private var fascistCardsPlayed: Int = 0
     private var liberalCardsPlayed: Int = 0
     private var cardPackSize: Int = 0
-    private var lastGovernment: Pair<String, String>? = null
+    private var lastGovernment: Pair<String, String>? = Pair("","")
     private var president: String = ""
     private var chancellor: String = ""
     private var players: List<String>? = null
@@ -82,7 +82,7 @@ class GameStateShareable(gameState: GameState) {
         this.gameState = gameState.gameState
         this.fascistCardsPlayed = gameState.facPolicies
         this.liberalCardsPlayed = gameState.libPolicies
-        this.lastGovernment = gameState.lastGovernment?.run { Pair(this.first.name, this.second.name) }
+        this.lastGovernment = gameState.lastGovernment?.run { Pair(this.first.name, this.second.name) } ?: Pair("", "")
         this.cardPackSize = gameState.cardPack.cards.size
         this.president = gameState.president?.name ?: ""
         this.chancellor = gameState.chancellor?.name ?: ""

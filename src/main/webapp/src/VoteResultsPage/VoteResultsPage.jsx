@@ -22,22 +22,24 @@ export default class VoteResultsPage extends PureComponent {
     );
 
     renderCards = () => {
-        if (this.context.cards.length !== 0) return <DiscardCard setCards={this.props.setCards} />;
+        console.log('presPower:' + this.context.presidentialPower);
+        if (this.context.cards.length !== 0)
+            return <DiscardCard setCards={this.props.setCards}/>;
         else return null
     };
 
     renderResults = () => {
-            return <table id="conversation" className="gameStateTable">
-                <thead>
-                <tr>
-                    <th>Voter</th>
-                    <th>Result</th>
-                </tr>
-                </thead>
-                <tbody id="registrations">
-                {JSON.parse(this.context.extraInfo).map(this.renderVote)}
-                </tbody>
-            </table>
+        return <table id="conversation" className="gameStateTable">
+            <thead>
+            <tr>
+                <th>Voter</th>
+                <th>Result</th>
+            </tr>
+            </thead>
+            <tbody id="registrations">
+            {JSON.parse(this.context.extraInfo).map(this.renderVote)}
+            </tbody>
+        </table>
     };
 
     renderVote = (playerJSON, index) => (
