@@ -32,7 +32,7 @@ const val LIBERAL = "Liberal"
 const val HITLER = "Hitler"
 const val YAY = "Yay"
 const val NAY = "Nay"
-const val TIME_TO_LEARN_ROLES = 15000L
+const val TIME_TO_WAIT = 1500L //TODO: 15000L
 const val CANDIDATE = "Candidate"
 const val TOPIC_GAMESTATE = "/topic/gameState"
 const val QUEUE_REPLY = "/queue/reply"
@@ -119,25 +119,22 @@ class Controller {
                 gameState.facPolicies++
                 handlePresidentialPowers()
             }
-            Timer().schedule(
-                    object : TimerTask() {
-                        override fun run() {
-                            voterYayOrNayMap = mutableMapOf()
-                            gameState.lastGovernment = Pair(gameState.president!!, gameState.chancellor!!)
-                            gameState.president = getNextPresident(
-                                    gameState.president!!,
-                                    null,
-                                    alivePlayersOrder = gameState.alivePlayerOrder
-                            )
-                            gameState.gameState = VOTING
-                            gameState.chancellor = null
-                            gameState.extraInfo = ""
-                            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
-                        }
-                    },
-                    TIME_TO_LEARN_ROLES
-            )
+            waitAndDo(TIME_TO_WAIT) { sendGameStateAfterDiscard(messageHeaders) }
         }
+    }
+
+    private fun sendGameStateAfterDiscard(messageHeaders: MessageHeaders) {
+        voterYayOrNayMap = mutableMapOf()
+        gameState.lastGovernment = Pair(gameState.president!!, gameState.chancellor!!)
+        gameState.president = getNextPresident(
+                gameState.president!!,
+                null,
+                alivePlayersOrder = gameState.alivePlayerOrder
+        )
+        gameState.gameState = VOTING
+        gameState.chancellor = null
+        gameState.extraInfo = ""
+        messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
     }
 
     private fun handlePresidentialPowers() {
@@ -190,50 +187,57 @@ class Controller {
 
     private fun handleVoteOrChancellorCandidate(sha: SimpMessageHeaderAccessor, message: VotingMessage, messageHeaders: MessageHeaders) {
         val messageFromPlayer = allPlayers.find { it.sessionId == sha.user!!.name }!!
-//        logger.info { "Message received from $messageFromPlayer" }
         if (message.chancellor.isNotBlank() &&
                 allPlayers.find { it.sessionId == sha.user!!.name } == gameState.president) {
-            gameState.chancellor = allPlayers.find { it.name == message.chancellor }
-            gameState.extraInfo = CANDIDATE
-            messagingTemplate!!.convertAndSend(
-                    TOPIC_GAMESTATE,
-                    gameState.toJSON(),
-                    messageHeaders
-            )
-            gameState.extraInfo = ""
+            setChancellor(message, messageHeaders)
         } else {
             voterYayOrNayMap[messageFromPlayer] = message.yayOrNay
         }
 
         if (voterYayOrNayMap.keys.size == allPlayers.size) {
-            gameState.gameState = VOTE_RESULTS
-            gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
-            if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
-                val cards = Gson().toJson(mapOf("Cards" to gameState.cardPack.drawThree()))
-                logger.info { "Yays have it, sending ${cards}." }
-                gameState.failedGovernments = 0
-                messagingTemplate!!.convertAndSendToUser(gameState.president!!.sessionId, QUEUE_REPLY, cards);
-                messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
-            } else {
-                logger.info { "Nays have it." }
-                voterYayOrNayMap = mutableMapOf()
-                gameState.president = getNextPresident(
-                        gameState.president!!,
-                        null,
-                        alivePlayersOrder = gameState.alivePlayerOrder
-                )
-                gameState.failedGovernments++
-                if (gameState.failedGovernments == 3) {
-                    if (gameState.cardPack.drawN(1)[0] == LIBERAL.toLowerCase()) gameState.libPolicies++
-                    else gameState.facPolicies++
-                    gameState.failedGovernments = 0
+            handleVoteResults(messageHeaders)
+        }
+    }
 
-                }
-                gameState.gameState = VOTING
-                gameState.chancellor = null
-                gameState.extraInfo = ""
-                messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+    private fun setChancellor(message: VotingMessage, messageHeaders: MessageHeaders) {
+        gameState.chancellor = allPlayers.find { it.name == message.chancellor }
+        gameState.extraInfo = CANDIDATE
+        messagingTemplate!!.convertAndSend(
+                TOPIC_GAMESTATE,
+                gameState.toJSON(),
+                messageHeaders
+        )
+        gameState.extraInfo = ""
+    }
+
+    private fun handleVoteResults(messageHeaders: MessageHeaders) {
+        gameState.gameState = VOTE_RESULTS
+        gameState.extraInfo = Gson().toJson(voterYayOrNayMap.map { (p, v) -> mapOf(p.name to v) })
+        if (voterYayOrNayMap.values.count { it == YAY } > voterYayOrNayMap.values.count { it == NAY }) {
+            val cards = Gson().toJson(mapOf("Cards" to gameState.cardPack.drawThree()))
+            logger.info { "Yays have it, sending ${cards}." }
+            gameState.failedGovernments = 0
+            messagingTemplate!!.convertAndSendToUser(gameState.president!!.sessionId, QUEUE_REPLY, cards);
+            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
+        } else {
+            logger.info { "Nays have it." }
+            voterYayOrNayMap = mutableMapOf()
+            gameState.president = getNextPresident(
+                    gameState.president!!,
+                    null,
+                    alivePlayersOrder = gameState.alivePlayerOrder
+            )
+            gameState.failedGovernments++
+            if (gameState.failedGovernments == 3) {
+                if (gameState.cardPack.drawN(1)[0] == LIBERAL.toLowerCase()) gameState.libPolicies++
+                else gameState.facPolicies++
+                gameState.failedGovernments = 0
+
             }
+            gameState.gameState = VOTING
+            gameState.chancellor = null
+            gameState.extraInfo = ""
+            messagingTemplate!!.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders)
         }
     }
 
@@ -306,19 +310,16 @@ class Controller {
             }
         }
         allPlayers.forEach { logger.info { "${it.name} is ${it.role}" } }
-        Timer().schedule(
-                object : TimerTask() {
-                    override fun run() {
-                        logger.info { "Waited ${TIME_TO_LEARN_ROLES / 1000} s before setting gamestate to $VOTING." }
-                        gameState.gameState = VOTING
-                        messagingTemplate!!.convertAndSend(
-                                TOPIC_GAMESTATE,
-                                gameState.toJSON(),
-                                messageHeaders
-                        )
-                    }
-                },
-                TIME_TO_LEARN_ROLES
+        waitAndDo(TIME_TO_WAIT) { startVoting(messageHeaders) }
+    }
+
+    private fun startVoting(messageHeaders: MessageHeaders) {
+        logger.info { "Waited ${TIME_TO_WAIT / 1000} s before setting gamestate to $VOTING." }
+        gameState.gameState = VOTING
+        messagingTemplate!!.convertAndSend(
+                TOPIC_GAMESTATE,
+                gameState.toJSON(),
+                messageHeaders
         )
     }
 

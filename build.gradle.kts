@@ -30,7 +30,6 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.webjars:webjars-locator-core")
-//	implementation("org.webjars:sockjs-client:1.0.2")
 	implementation("org.webjars:stomp-websocket:2.3.3")
 	implementation("org.webjars:bootstrap:3.3.7")
 	implementation("org.slf4j:slf4j-api:1.7.5")
@@ -44,9 +43,3 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
-
-//tasks.withType<KotlinCompile> {
-//	kotlinOptions {
-//		jvmTarget = "1.8"
-//	}
-//}

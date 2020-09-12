@@ -82,10 +82,13 @@ export default class DiscardCard extends PureComponent {
         if (this.context.presidentialPower !== 'peekedCards') {
             this.context.cards.splice(indexOfDiscardedCard, 1);
             this.context.sendMessage('/app/discard', {cards: this.context.cards, discardedCard: discardedCard});
+        } else {
+            this.context.sendMessage('/app/discard', {cards: [''], discardedCard: ''})
         }
         console.log('Currently isPeek: ', this.context.presidentialPower === 'peekedCards');
         this.context.setCards([]);
         console.log('Now cards2 ', this.context.cards);
-        this.context.extraInfo = ""
+        this.context.setExtraInfo('')
+        this.context.setPresidentialPower('')
     }
 }
