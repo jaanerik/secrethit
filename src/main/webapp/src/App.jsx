@@ -22,7 +22,7 @@ class App extends PureComponent {
         players: [],
         nullGovernments: 0,
         lastGovernment: {first: '', second: ''},
-        extraInfo: '',
+        extraInfoJSON: '{}',
         presidentialPower: '',
         cards: []
     };
@@ -70,11 +70,12 @@ class App extends PureComponent {
         this.setState({myRole: role})
     };
 
-    setExtraInfo = (extraInfo) => {
-        this.setState({extraInfo: extraInfo})
+    setExtraInfoJSON = (extraInfoJSON) => {
+        this.setState({extraInfoJSON: extraInfoJSON})
     };
 
     setCards = (cards) => {
+        console.log('I set cards to ' + cards)
         this.setState({cards: cards})
     };
 
@@ -86,42 +87,41 @@ class App extends PureComponent {
         ...this.state,
         sendMessage: this.sendMessage,
         setMyName: this.setMyName,
-        setCards: this.setCards
+        setCards: this.setCards,
+        setExtraInfoJSON: this.setExtraInfoJSON,
+        setPresidentialPower: this.setPresidentialPower
     });
 
     handleMessage = (msg, topic) => {
         console.log(topic + " received!");
-        switch (topic) {
-            case '/topic/gameState':
-                this.setState({...msg});
-                console.log(this.state);
-                console.log('Currently cards: ', this.state.cards);
-                break;
-            case '/user/queue/reply':
-                console.log({...msg});
-                const key = Object.keys({...msg})[0];
-                switch (key) {
-                    case 'Introduction':
-                        this.setMyRole(msg[key]['role'].toString());
-                        this.setExtraInfo(msg[key]['extraInfo'].toString());
-                        break;
-                    case 'presidentialPower':
-                        const presidentialPowerObj = {...msg[key]};
-                        if (Object.keys({...presidentialPowerObj})[0] === 'peekedCards') {
-                            this.setPresidentialPower('peekedCards');
-                            console.log('Peeked cards: ', presidentialPowerObj['peekedCards']);
-                        }
-                        this.setCards(presidentialPowerObj['peekedCards']);
-                        break;
-                    case 'Cards':
-                        this.setCards(msg['Cards']);
-                        break;
-                    default: console.error('Weirdness handling queue reply.')
-                }
-                break;
-            default:
-                console.error('Unknown topic received!');
-                break;
+        if (topic === '/topic/gameState') {
+            this.setState({...msg});
+            console.log(this.state);
+            console.log('Currently cards: ', this.state.cards);
+        }
+
+        if (topic === '/user/queue/reply') {
+            console.log({...msg});
+            const key = Object.keys({...msg})[0];
+            switch (key) {
+                case 'Introduction':
+                    this.setMyRole(msg[key]['role'].toString());
+                    this.setExtraInfoJSON(msg[key]['extraInfo'].toString());
+                    break;
+                case 'presidentialPower':
+                    const presidentialPowerObj = {...msg[key]};
+                    if (Object.keys({...presidentialPowerObj})[0] === 'peekedCards') {
+                        this.setPresidentialPower('peekedCards');
+                        console.log('Peeked cards: ', presidentialPowerObj['peekedCards']);
+                    }
+                    this.setCards(presidentialPowerObj['peekedCards']);
+                    break;
+                case 'Cards':
+                    this.setCards(msg['Cards']);
+                    break;
+                default:
+                    console.error('Weirdness handling queue reply.')
+            }
         }
     };
 

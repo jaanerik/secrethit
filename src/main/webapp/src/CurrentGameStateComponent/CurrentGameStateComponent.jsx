@@ -45,7 +45,7 @@ export default class CurrentGameStateComponent extends PureComponent {
                             </tr>
                             <tr>
                                 <td className="attr">Last government</td>
-                                <td>{this.context.lastGovernment[0] + ' and ' + this.context.lastGovernment[1]}</td>
+                                <td>{this.context.lastGovernment.first + ' and ' + this.context.lastGovernment.second}</td>
                             </tr>
                             </tbody>
                         </table>

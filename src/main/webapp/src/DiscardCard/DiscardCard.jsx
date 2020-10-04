@@ -88,7 +88,7 @@ export default class DiscardCard extends PureComponent {
         console.log('Currently isPeek: ', this.context.presidentialPower === 'peekedCards');
         this.context.setCards([]);
         console.log('Now cards2 ', this.context.cards);
-        this.context.setExtraInfo('')
+        this.context.setExtraInfoJSON('{}')
         this.context.setPresidentialPower('')
     }
 }
