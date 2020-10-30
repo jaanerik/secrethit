@@ -27,7 +27,7 @@ class Controller (private val gameStateService: GameStateService, private val pu
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
     ) {
-        gameStateService.handleVoteOrChancellorCandidate(sha, message, messageHeaders)
+        gameStateService.handleVoteOrChancellorCandidate(sha, message)
     }
 
     @MessageMapping("/register")
@@ -49,7 +49,7 @@ class Controller (private val gameStateService: GameStateService, private val pu
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
     ) {
-        gameStateService.handleDiscard(message, messageHeaders)
+        gameStateService.handleDiscard(message)
     }
 
     @MessageMapping("/reset")
@@ -59,7 +59,7 @@ class Controller (private val gameStateService: GameStateService, private val pu
             messageHeaders: MessageHeaders
     ) {
         if (message.message == RESET_MSG) {
-            gameStateService.resetGame(messageHeaders)
+            gameStateService.resetGame()
         }
     }
 
