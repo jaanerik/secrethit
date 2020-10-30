@@ -3,9 +3,12 @@ package com.jaanerikpihel.secrethit.service
 import com.google.gson.Gson
 import com.jaanerikpihel.secrethit.controller.introMessage
 import com.jaanerikpihel.secrethit.controller.waitAndDo
+import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.LOYALTY
+import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.LOYALTY_PEEKED
+import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.PEEK
 import com.jaanerikpihel.secrethit.model.*
+import com.jaanerikpihel.secrethit.model.GameState.Companion.REGISTER
 import mu.KotlinLogging
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.messaging.MessageHeaders
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor
 import org.springframework.messaging.simp.SimpMessageSendingOperations
@@ -25,11 +28,11 @@ const val TOPIC_GAMESTATE = "/topic/gameState"
 const val QUEUE_REPLY = "/queue/reply"
 const val PRESIDENTIAL_POWER = "presidentialPower"
 const val PEEKED_CARDS = "peekedCards"
+const val KILL_PLAYER = "killPlayer"
 
 @Service
 class GameStateService(
-        private var messagingTemplate: SimpMessageSendingOperations,
-        private val publisher: ApplicationEventPublisher
+        private var messagingTemplate: SimpMessageSendingOperations
 ) {
     private var allPlayers = emptyList<Player>().toMutableList()
     private var playerNameToHeaders: MutableMap<String, MessageHeaders> = mutableMapOf()
@@ -52,7 +55,7 @@ class GameStateService(
                 messageHeaders
         )
         allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run { it.first.role = it.second } }
-        gameState.alivePlayerOrder = allPlayers.shuffled()
+        gameState.alivePlayerOrder = allPlayers.shuffled().toMutableList()
         logger.info { "Alive player order: ${gameState.alivePlayerOrder}" }
         allPlayers.forEach {
             if (it.role == FASCIST) {
@@ -72,29 +75,32 @@ class GameStateService(
     }
 
     fun addPlayer(message: RegisterMessage, sha: SimpMessageHeaderAccessor, messageHeaders: MessageHeaders) {
-        val player: Player
-        if (allPlayers.map { it.name }.contains(message.name)) {
-            //Update sessionId if name already exists. Simple fix for connectivity issues.
-            player = allPlayers.find { it.name == message.name }!!
-            player.sessionId = sha.user!!.name
-        } else {
-            player = Player(
-                    sha.user!!.name,
-                    message.name, ""
+        if (gameState.gameState == REGISTER) {
+            val player: Player
+            if (allPlayers.map { it.name }.contains(message.name)) {
+                //Update sessionId if name already exists. Simple fix for connectivity issues.
+                player = allPlayers.find { it.name == message.name }!!
+                if (player.isAlive) player.sessionId = sha.user!!.name
+                else player.sessionId = ""
+            } else {
+                player = Player(
+                        sha.user!!.name,
+                        message.name, ""
+                )
+                playerNameToHeaders[player.name] = messageHeaders
+                allPlayers.add(player)
+            }
+            logger.info {
+                "Registered a new player: $player, " +
+                        "total number of alive players=${gameState.alivePlayerOrder.size}"
+            }
+            gameState.alivePlayerOrder = allPlayers
+            messagingTemplate.convertAndSend(
+                    TOPIC_GAMESTATE,
+                    gameState.toJSON(),
+                    messageHeaders
             )
-            playerNameToHeaders[player.name] = messageHeaders
-            allPlayers.add(player)
         }
-        logger.info {
-            "Registered a new player: $player, " +
-                    "total number of alive players=${gameState.alivePlayerOrder.size}"
-        }
-        gameState.players = allPlayers
-        messagingTemplate.convertAndSend(
-                TOPIC_GAMESTATE,
-                gameState.toJSON(),
-                messageHeaders
-        )
     }
 
     private fun startVoting() {
@@ -125,7 +131,6 @@ class GameStateService(
                 }
                 isCardFascist -> {
                     gameState.facPolicies++
-                    println("Currently fascist policies: ${gameState.facPolicies}")
                     handlePresidentialPowers { sendVotingGameState() }
                 }
                 else -> sendVotingGameState()
@@ -145,6 +150,7 @@ class GameStateService(
         gameState.chancellor = null
         gameState.extraInfo = ""
         messagingTemplate.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders!!)
+        println("Sent game state with players: ${gameState.alivePlayerOrder}")
     }
 
     private fun handlePresidentialPowers(defaultFunction: () -> Unit) {
@@ -156,7 +162,8 @@ class GameStateService(
          */
         when {
             gameState.alivePlayerOrder.size <= 6 -> when (gameState.facPolicies) {
-                1, 3 -> sendPresidentThreeTopCards()
+                1 -> askPresidentToExamineParty() //delete
+                3 -> sendPresidentThreeTopCards()
                 4, 5 -> askPresidentToKillPlayer()
                 else -> defaultFunction()
             }
@@ -173,7 +180,7 @@ class GameStateService(
                 3 -> askPresidentToPickNextPresident()
                 4 -> askPresidentToKillPlayer()
                 5 -> askPresidentToKillPlayer()
-                else -> defaultFunction() //should be uneccesary
+                else -> defaultFunction() //should be unnecessary
             }
         }
     }
@@ -184,13 +191,36 @@ class GameStateService(
     }
 
     private fun askPresidentToExamineParty() {
-        println("askPresidentToExamine")
-        TODO("Not yet implemented")
+        messagingTemplate.convertAndSendToUser(
+                gameState.president!!.sessionId, QUEUE_REPLY,
+                Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(LOYALTY to "")))
+        )
+        logger.info { "Asked president to examine somebody." }
+
+    }
+
+    fun sendPresidentLoyalty(subject: String) {
+        val player = gameState.alivePlayerOrder.first { it.name == subject }
+        val loyalty = if (player.role != LIBERAL) FASCIST else LIBERAL
+        messagingTemplate.convertAndSendToUser(
+                gameState.president!!.sessionId, QUEUE_REPLY,
+                Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(LOYALTY_PEEKED to
+                    mapOf("playerName" to player.name, "playerRole" to loyalty)
+                )))
+        )
+        logger.info { "Sent party of  ${player.name} (${player.role}) to president." }
     }
 
     private fun askPresidentToKillPlayer() {
-        println("Ask president to kill")
-        TODO("Not yet implemented")
+        logger.info { "Asking president to kill a player." }
+        messagingTemplate.convertAndSendToUser(
+                gameState.president!!.sessionId, QUEUE_REPLY,
+                Gson().toJson(
+                        mapOf(PRESIDENTIAL_POWER to
+                                mapOf(KILL_PLAYER to
+                                        gameState.alivePlayerOrder.filter { it != gameState.president }.map { it.name }
+                                )))
+        )
     }
 
     private fun sendPresidentThreeTopCards() {
@@ -213,7 +243,7 @@ class GameStateService(
             voterYayOrNayMap[messageFromPlayer] = message.yayOrNay
         }
 
-        if (voterYayOrNayMap.keys.size == allPlayers.size) {
+        if (voterYayOrNayMap.keys.size == gameState.alivePlayerOrder.size) {
             handleVoteResults()
         }
     }
@@ -275,5 +305,20 @@ class GameStateService(
                 gameState.toJSON(),
                 messageHeaders!!
         )
+    }
+
+    fun killPlayer(playerName: String) {
+        val player = gameState.alivePlayerOrder.first { it.name == playerName }
+        messagingTemplate.convertAndSendToUser(
+                player.sessionId, QUEUE_REPLY,
+                Gson().toJson(mapOf("dead" to ""))
+        )
+        gameState.alivePlayerOrder.remove(player)
+        player.isAlive = false;
+        logger.info { "Removed $player from game." }
+    }
+
+    fun pickNextPresident(subject: String) {
+        TODO("Not yet implemented")
     }
 }

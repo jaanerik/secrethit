@@ -8,7 +8,13 @@ export default class CurrentGameStateComponent extends PureComponent {
         this.renderCurrentState()
     );
 
-    renderCurrentState = () => {
+    renderCurrentState = (lastGovernment) => {
+        function formatLastGovernment() {
+            if (lastGovernment.first !== '') { return '' }
+            return lastGovernment.first +
+            ' and ' + lastGovernment.second
+        }
+
         return (
             <section className="secret-slice" id="boxes">
                 <div className="secret-container">
@@ -45,7 +51,8 @@ export default class CurrentGameStateComponent extends PureComponent {
                             </tr>
                             <tr>
                                 <td className="attr">Last government</td>
-                                <td>{this.context.lastGovernment.first + ' and ' + this.context.lastGovernment.second}</td>
+                                <td>{() => formatLastGovernment(this.context.lastGovernment)}
+                                </td>
                             </tr>
                             </tbody>
                         </table>

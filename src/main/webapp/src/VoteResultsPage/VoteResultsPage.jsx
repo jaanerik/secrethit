@@ -2,15 +2,17 @@ import React, {Fragment, PureComponent} from 'react';
 import GameStateContext from "../GameStateContext";
 import CurrentGameStateComponent from "../CurrentGameStateComponent/CurrentGameStateComponent";
 import DiscardCard from "../DiscardCard/DiscardCard";
+import PlayersCard from "../PlayersCard/PlayersCard";
 
 export default class VoteResultsPage extends PureComponent {
     static contextType = GameStateContext;
 
     render = () => (
         <Fragment>
-            {this.renderCards()}
             <section className="secret-slice" id="boxes">
                 <div className="secret-container">
+                    {this.renderCards()}
+                    {this.renderPlayers()}
                     <div className="secret-gitter-row">
                         {this.renderResults()}
                         <hr/>
@@ -20,6 +22,15 @@ export default class VoteResultsPage extends PureComponent {
             <CurrentGameStateComponent/>
         </Fragment>
     );
+
+    renderPlayers = () => {
+        console.log("Showing all players.");
+        if (this.context.presidentialPower === 'killPlayer' ||
+            this.context.presidentialPower === 'peekLoyalty' ||
+            this.context.presidentialPower === 'pickPresident')
+            return <PlayersCard/>;
+        else return null
+    };
 
     renderCards = () => {
         console.log('presPower:' + this.context.presidentialPower);

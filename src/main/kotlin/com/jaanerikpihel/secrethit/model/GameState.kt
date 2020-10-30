@@ -15,7 +15,7 @@ class GameState() {
     var players: List<Player>? = null
     var failedGovernments: Int = 0
     var extraInfo: String = ""
-    var alivePlayerOrder: List<Player> = emptyList()
+    var alivePlayerOrder: MutableList<Player> = mutableListOf()
 
     constructor(
             gameState: String = "",
@@ -62,7 +62,6 @@ class GameState() {
     fun toJSON(): String {
         return GameStateShareable(this).toJSON()
     }
-
 }
 
 class GameStateShareable(gameState: GameState) {
@@ -86,7 +85,7 @@ class GameStateShareable(gameState: GameState) {
         this.cardPackSize = gameState.cardPack.cards.size
         this.president = gameState.president?.name ?: ""
         this.chancellor = gameState.chancellor?.name ?: ""
-        this.players = gameState.players?.map { it.name }
+        this.players = gameState.alivePlayerOrder.map { it.name }
         this.nullGovernments = gameState.failedGovernments
         this.extraInfo = gameState.extraInfo
     }
@@ -94,7 +93,6 @@ class GameStateShareable(gameState: GameState) {
     fun toJSON(): String {
         return Gson().toJson(this)
     }
-
 }
 
 class CardPack {

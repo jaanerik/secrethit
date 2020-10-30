@@ -56,6 +56,8 @@ class App extends PureComponent {
                 return (<IntroductionPage/>);
             case 'Enacting':
                 return (<EnactingPage/>);
+            case 'Dead':
+                return 'You are dead!';
 
             default:
                 return 'EI OSKA VEEL'
@@ -97,12 +99,13 @@ class App extends PureComponent {
         if (topic === '/topic/gameState') {
             this.setState({...msg});
             console.log(this.state);
-            console.log('Currently cards: ', this.state.cards);
+            console.log('Currently state: ', this.state);
         }
 
         if (topic === '/user/queue/reply') {
             console.log({...msg});
             const key = Object.keys({...msg})[0];
+            console.log('key is ', key);
             switch (key) {
                 case 'Introduction':
                     this.setMyRole(msg[key]['role'].toString());
@@ -113,11 +116,32 @@ class App extends PureComponent {
                     if (Object.keys({...presidentialPowerObj})[0] === 'peekedCards') {
                         this.setPresidentialPower('peekedCards');
                         console.log('Peeked cards: ', presidentialPowerObj['peekedCards']);
+                        this.setCards(presidentialPowerObj['peekedCards']);
                     }
-                    this.setCards(presidentialPowerObj['peekedCards']);
+                    if (Object.keys({...presidentialPowerObj})[0] === 'killPlayer') {
+                        console.log('Can kill one of these players: ', presidentialPowerObj['killPlayer']);
+                        this.setPresidentialPower('killPlayer');
+                    }
+                    if (Object.keys({...presidentialPowerObj})[0] === 'peekLoyalty') {
+                        console.log('Choosing whose loyalty to peek.');
+                        this.setPresidentialPower('peekLoyalty');
+                    }
+                    if (Object.keys({...presidentialPowerObj})[0] === 'peekedLoyalty') {
+                        this.setPresidentialPower('peekedLoyalty');
+                        console.log('pres power obj: ', presidentialPowerObj['peekedLoyalty']);
+                        const playerName = presidentialPowerObj['peekedLoyalty']['playerName'];
+                        const playerRole = presidentialPowerObj['peekedLoyalty']['playerRole'];
+                        console.log('Loyalty now seen: ', playerName, playerRole);
+                        this.setExtraInfoJSON(presidentialPowerObj['peekedLoyalty']);
+                        console.log('Extra info json: ' + this.context.extraInfoJSON)
+                    }
                     break;
                 case 'Cards':
                     this.setCards(msg['Cards']);
+                    break;
+                case 'dead':
+                    this.setState({'gameState': 'Dead'});
+                    this.clientRef.disconnect();
                     break;
                 default:
                     console.error('Weirdness handling queue reply.')
@@ -126,7 +150,7 @@ class App extends PureComponent {
     };
 
     sendMessage = (url, msg) => {
-        console.log(url + ' :' + JSON.stringify(msg));
+        console.log(url + ': ' + JSON.stringify(msg));
         this.clientRef.sendMessage(url, JSON.stringify(msg));
     };
 }

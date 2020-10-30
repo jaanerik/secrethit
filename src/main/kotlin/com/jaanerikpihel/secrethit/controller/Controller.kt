@@ -19,28 +19,24 @@ const val START_MSG = "\$start\$"
 const val RESET_MSG = "\$reset\$"
 
 @Controller
-class Controller (private val gameStateService: GameStateService, private val publisher: ApplicationEventPublisher) {
+class Controller(private val gameStateService: GameStateService, private val publisher: ApplicationEventPublisher) {
 
     @MessageMapping("/voting")
     fun processMessageFromClient(
             @Payload message: VotingMessage,
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
-    ) {
-        gameStateService.handleVoteOrChancellorCandidate(sha, message)
-    }
+    ) = gameStateService.handleVoteOrChancellorCandidate(sha, message)
 
     @MessageMapping("/register")
     fun processMessageFromClient(
             @Payload message: RegisterMessage,
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
-    ) {
-        if (message.name == START_MSG) {
-            gameStateService.startGame(messageHeaders)
-        } else {
-            gameStateService.addPlayer(message, sha, messageHeaders)
-        }
+    ) = when (message.name) {
+        START_MSG -> gameStateService.startGame(messageHeaders)
+        RESET_MSG -> gameStateService.resetGame()
+        else -> gameStateService.addPlayer(message, sha, messageHeaders)
     }
 
     @MessageMapping("/discard")
@@ -48,29 +44,21 @@ class Controller (private val gameStateService: GameStateService, private val pu
             @Payload message: DiscardMessage,
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
-    ) {
-        gameStateService.handleDiscard(message)
-    }
+    ) = gameStateService.handleDiscard(message)
 
     @MessageMapping("/reset")
     fun processMessageFromClient(
             @Payload message: ResetMessage,
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
-    ) {
-        if (message.message == RESET_MSG) {
-            gameStateService.resetGame()
-        }
-    }
+    ) = if (message.message == RESET_MSG) gameStateService.resetGame() else logger.info { "Wrong arg reset" }
 
     @MessageMapping("/presidentPower")
     fun processMessageFromClient(
             @Payload message: PresidentPowerMessage,
             sha: SimpMessageHeaderAccessor,
             messageHeaders: MessageHeaders
-    ) {
-        publisher.publishEvent(PresidentPowerEvent(this::class, message))
-    }
+    ) = publisher.publishEvent(PresidentPowerEvent(this::class, message))
 
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
