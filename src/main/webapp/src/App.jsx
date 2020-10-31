@@ -24,6 +24,7 @@ class App extends PureComponent {
         lastGovernment: {first: '', second: ''},
         extraInfoJSON: '{}',
         presidentialPower: '',
+        presidentialPowerObj: null,
         cards: []
     };
 
@@ -77,12 +78,16 @@ class App extends PureComponent {
     };
 
     setCards = (cards) => {
-        console.log('I set cards to ' + cards)
+        console.log('I set cards to ' + cards);
         this.setState({cards: cards})
     };
 
     setPresidentialPower = (power) => {
         this.setState({presidentialPower: power})
+    };
+
+    setPresidentialPowerObj = (obj) => {
+        this.setState({presidentialPowerObj: JSON.stringify(obj)});
     };
 
     contextValue = () => ({
@@ -91,7 +96,8 @@ class App extends PureComponent {
         setMyName: this.setMyName,
         setCards: this.setCards,
         setExtraInfoJSON: this.setExtraInfoJSON,
-        setPresidentialPower: this.setPresidentialPower
+        setPresidentialPower: this.setPresidentialPower,
+        setPresidentialPowerObj: this.setPresidentialPowerObj
     });
 
     handleMessage = (msg, topic) => {
@@ -128,12 +134,11 @@ class App extends PureComponent {
                     }
                     if (Object.keys({...presidentialPowerObj})[0] === 'peekedLoyalty') {
                         this.setPresidentialPower('peekedLoyalty');
-                        console.log('pres power obj: ', presidentialPowerObj['peekedLoyalty']);
                         const playerName = presidentialPowerObj['peekedLoyalty']['playerName'];
                         const playerRole = presidentialPowerObj['peekedLoyalty']['playerRole'];
-                        console.log('Loyalty now seen: ', playerName, playerRole);
-                        this.setExtraInfoJSON(presidentialPowerObj['peekedLoyalty']);
-                        console.log('Extra info json: ' + this.context.extraInfoJSON)
+                        const presPowerObj = {playerName: playerName, playerRole: playerRole};
+                        this.setPresidentialPowerObj(presPowerObj);
+                        console.log('Pres power obj: ' + this.state.presidentialPowerObj)
                     }
                     break;
                 case 'Cards':

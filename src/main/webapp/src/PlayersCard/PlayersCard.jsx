@@ -7,21 +7,29 @@ import Col from 'react-bootstrap/Col'
 import GameStateContext from "../GameStateContext";
 import Image from 'react-bootstrap/Image';
 
-function renderCard(player, sendRequest, changeShow = false, index, extraInfoJSON) {
+function renderCard(player, sendRequest, changeShow = false, index, presidentialPowerObj) {
     if (player === null) return null;
+    console.log('presPowerObj in rendercard: ', presidentialPowerObj);
 
-    function getPlayerString(player, extraInfoJSON) {
-        console.log('extra info: ', extraInfoJSON);
+    function getPlayerString(player, presidentialPowerObj) {
+        presidentialPowerObj = JSON.parse(presidentialPowerObj);
+        console.log('player: ', player, 'obj:', presidentialPowerObj);
+        if (presidentialPowerObj !== null && typeof presidentialPowerObj !== 'undefined') {
+            console.log("Has playername!", Object.keys(presidentialPowerObj));
+            if (Object.keys(presidentialPowerObj).includes('playerName') &&
+                presidentialPowerObj['playerName'] === player)
+                return <p>{player} ({presidentialPowerObj['playerRole']})</p>
+        }
         return <p>{player}</p>
     }
 
     return <div onClick={() => {
         changeShow();
-        sendRequest(player.toLowerCase());
+        sendRequest(player);
     }}>
         <div><Image width="100" height="200" src={"./img/player" + index + ".png"
         } rounded/>
-            <p>{() => getPlayerString(player, extraInfoJSON)}</p>
+            <p>{getPlayerString(player, presidentialPowerObj)}</p>
         </div>
     </div>
 }
@@ -36,7 +44,7 @@ function CardsModal(props) {
                         {props.players.filter(it => it !== props.myName).map((player, index) => {
                             return <Col xs={4} md={3} key={index}>
                                 {renderCard(
-                                    player, props.sendRequest, props.changeShow, index, props.extraInfoJSON
+                                    player, props.sendRequest, props.changeShow, index, props.presidentialPowerObj
                                 )}
                             </Col>
                         })}
@@ -65,6 +73,7 @@ export default class PlayersCard extends PureComponent {
     changeShow = () => {
         this.setState({show: !this.state.show}, () => {
             console.log('Changed modal show: ', this.state.show);
+            console.log('Pres power obj:', this.context.presidentialPowerObj)
         });
     };
 
@@ -79,7 +88,7 @@ export default class PlayersCard extends PureComponent {
                 sendRequest={(card) => this.sendRequest(card)}
                 players={this.context.players}
                 myName={this.context.myName}
-                extraInfoJSON={this.context.extraInfoJSON}
+                presidentialPowerObj={this.context.presidentialPowerObj}
                 changeShow={this.changeShow}
             />
         </Fragment>

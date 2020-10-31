@@ -153,37 +153,35 @@ class GameStateService(
         println("Sent game state with players: ${gameState.alivePlayerOrder}")
     }
 
-    private fun handlePresidentialPowers(defaultFunction: () -> Unit) {
-        /*
+    private fun handlePresidentialPowers(defaultFunction: () -> Unit) =/*
         This function is called only when fac policy is just enacted.
         TODO:   5-6 p 3rd card pres examines 3, kill, kill
                 7-8 p 2nd card pres examines party, picks next pres, kill, kill
                 9-10p 1st also examination, others same as before
          */
-        when {
-            gameState.alivePlayerOrder.size <= 6 -> when (gameState.facPolicies) {
-                1 -> askPresidentToExamineParty() //delete
-                3 -> sendPresidentThreeTopCards()
-                4, 5 -> askPresidentToKillPlayer()
-                else -> defaultFunction()
+            when {
+                gameState.alivePlayerOrder.size <= 6 -> when (gameState.facPolicies) {
+                    1 -> askPresidentToExamineParty() //delete
+                    3 -> sendPresidentThreeTopCards()
+                    4, 5 -> askPresidentToKillPlayer()
+                    else -> defaultFunction()
+                }
+                gameState.alivePlayerOrder.size <= 8 -> when (gameState.facPolicies) {
+                    2 -> askPresidentToExamineParty()
+                    3 -> askPresidentToPickNextPresident()
+                    4 -> askPresidentToKillPlayer()
+                    5 -> askPresidentToKillPlayer()
+                    else -> defaultFunction()
+                }
+                else -> when (gameState.facPolicies) {
+                    1 -> askPresidentToExamineParty()
+                    2 -> askPresidentToExamineParty()
+                    3 -> askPresidentToPickNextPresident()
+                    4 -> askPresidentToKillPlayer()
+                    5 -> askPresidentToKillPlayer()
+                    else -> defaultFunction() //should be unnecessary
+                }
             }
-            gameState.alivePlayerOrder.size <= 8 -> when (gameState.facPolicies) {
-                2 -> askPresidentToExamineParty()
-                3 -> askPresidentToPickNextPresident()
-                4 -> askPresidentToKillPlayer()
-                5 -> askPresidentToKillPlayer()
-                else -> defaultFunction()
-            }
-            else -> when (gameState.facPolicies) {
-                1 -> askPresidentToExamineParty()
-                2 -> askPresidentToExamineParty()
-                3 -> askPresidentToPickNextPresident()
-                4 -> askPresidentToKillPlayer()
-                5 -> askPresidentToKillPlayer()
-                else -> defaultFunction() //should be unnecessary
-            }
-        }
-    }
 
     private fun askPresidentToPickNextPresident() {
         println("askPresidenttoPickNext")

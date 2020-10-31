@@ -24,10 +24,10 @@ export default class VoteResultsPage extends PureComponent {
     );
 
     renderPlayers = () => {
-        console.log("Showing all players.");
         if (this.context.presidentialPower === 'killPlayer' ||
             this.context.presidentialPower === 'peekLoyalty' ||
-            this.context.presidentialPower === 'pickPresident')
+            this.context.presidentialPower === 'pickPresident' ||
+            this.context.presidentialPower === 'peekedLoyalty')
             return <PlayersCard/>;
         else return null
     };
