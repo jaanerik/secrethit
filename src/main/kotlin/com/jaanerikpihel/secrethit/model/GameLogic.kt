@@ -1,7 +1,7 @@
 package com.jaanerikpihel.secrethit.model
 
 fun getShuffledRoles(size: Int): List<String> {
-    val roles = when (size) {
+    val roles:MutableList<String> = when (size) {
         1 -> howManyLibFacWithOutHit(0, 0) //Testing
         2 -> howManyLibFacWithOutHit(1, 0) //Testing
         3 -> howManyLibFacWithOutHit(1, 1) //Testing
@@ -13,7 +13,8 @@ fun getShuffledRoles(size: Int): List<String> {
         10 -> howManyLibFacWithOutHit(6, 3)
         else -> throw IllegalArgumentException("Not enough or too many players!")
     }
-    return roles.shuffled()
+    //roles.shuffled()
+    return roles
 }
 
 private fun howManyLibFacWithOutHit(libCount: Int, facCount: Int): MutableList<String> {
