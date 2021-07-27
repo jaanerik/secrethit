@@ -14,15 +14,15 @@ class CorsFilter : OncePerRequestFilter() {
             request: HttpServletRequest,
             response: HttpServletResponse,
             filterChain: FilterChain) {
-        val origin = request.getHeader(ORIGIN)
-        println("Origin is $origin")
-//        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000")
-        response.setHeader("Access-Control-Allow-Origin", "*")
+//        val origin = request.getHeader(ORIGIN)
+//        println("Origin is $origin")
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:8080")
+//        response.setHeader("Access-Control-Allow-Origin", "*")
         response.setHeader("Access-Control-Allow-Credentials", "true")
         response.setHeader("Access-Control-Allow-Methods", "PUT, POST, GET, OPTIONS, DELETE, PATCH, HEAD")
         response.setHeader("Access-Control-Max-Age", "3600")
         response.setHeader("Access-Control-Allow-Headers", "content-type, authorization, origin, x-requested-with, accept")
-        println("Response is $response")
+        println("Response is ${response.headerNames}")
         if (request.method == OPTIONS) response.status = HttpServletResponse.SC_OK else filterChain.doFilter(request, response)
     }
 
