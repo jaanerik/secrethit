@@ -11,7 +11,7 @@ export default class IntroductionPage extends PureComponent {
                     <div className="secret-gitter-row">
                         <h2>Introduction</h2>
                         <h4>Your role: <b>{this.context.myRole}</b></h4>
-                        {this.context.extraInfo.split(';').map(this.renderInfo)}
+                        {this.context.extraInfoJSON.split(';').map(this.renderInfo)}
                     </div>
                 </div>
             </section>

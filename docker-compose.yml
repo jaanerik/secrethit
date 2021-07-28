@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  secrethit:
+    image: jaanerikpihel/secrethit:latest
+    container_name: secrethit
+    ports:
+      - "8080:8080"
+    networks:
+      - my_network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - my_network
+
+networks:
+  my_network:

@@ -74,11 +74,12 @@ class App extends PureComponent {
     };
 
     setExtraInfoJSON = (extraInfoJSON) => {
-        this.setState({extraInfoJSON: extraInfoJSON})
+        console.log('Extra info JSON: ' + extraInfoJSON.toString())
+        this.setState({extraInfoJSON: extraInfoJSON.toString()})
     };
 
     setCards = (cards) => {
-        console.log('I set cards to ' + cards);
+        console.log('Card set to ' + cards);
         this.setState({cards: cards})
     };
 

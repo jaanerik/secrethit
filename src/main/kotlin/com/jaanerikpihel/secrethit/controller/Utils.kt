@@ -3,9 +3,12 @@ package com.jaanerikpihel.secrethit.controller
 import com.google.gson.Gson
 import com.jaanerikpihel.secrethit.model.Player
 import com.jaanerikpihel.secrethit.service.LIBERAL
+import mu.KotlinLogging
 import org.apache.tomcat.util.buf.StringUtils
 import java.util.*
 
+
+private val logger = KotlinLogging.logger {}
 
 fun introMessage(allPlayers: MutableList<Player>, isFascist: Boolean, role: String): String {
     val information: String = if (isFascist) {
@@ -19,12 +22,15 @@ fun introMessage(allPlayers: MutableList<Player>, isFascist: Boolean, role: Stri
     }
     mapOf("role" to role)
     mapOf("information" to information)
-    return Gson().toJson(mapOf(
-            "Introduction" to mapOf(
-                    "role" to role,
-                    "extraInfo" to information
-            )
+    val messageGson = Gson().toJson(mapOf(
+        "Introduction" to mapOf(
+            "role" to role,
+            "extraInfo" to information
+        )
     ))
+    logger.info { "Sending message to fascists $information" }
+    logger.info { "Sending messageGson to front end: $messageGson" }
+    return messageGson
 }
 
 fun waitAndDo(waitFor: Long, function: () -> Unit) {
