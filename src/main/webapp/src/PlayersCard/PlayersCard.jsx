@@ -98,13 +98,13 @@ export default class PlayersCard extends PureComponent {
         const indexOfChosenPlayer = this.context.players.indexOf(card);
         const chosenPlayer = this.context.players[indexOfChosenPlayer];
         if (this.context.presidentialPower === 'killPlayer') {
-            this.context.sendMessage('/app/presidentPower', {power: 'killPlayer', object: chosenPlayer});
+            this.context.sendMessage('/app/presidentPower', {power: 'killedPlayer', object: chosenPlayer});
         } else if (this.context.presidentialPower === 'peekLoyalty') {
             this.context.sendMessage('/app/presidentPower', {power: 'peekLoyalty', object: chosenPlayer})
         } else if (this.context.presidentialPower === 'peekedLoyalty') {
             this.context.sendMessage('/app/presidentPower', {power: 'peekedLoyalty', object: ''})
         } else if (this.context.presidentialPower === 'pickPresident') {
-            this.context.sendMessage('/app/presidentPower', {power: 'pickPresident', object: chosenPlayer})
+            this.context.sendMessage('/app/presidentPower', {power: 'pickedPresident', object: chosenPlayer})
         }
         this.context.setPresidentialPower('')
     }

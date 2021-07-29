@@ -10,31 +10,33 @@ import org.springframework.stereotype.Component
 class GameStateListener (private var gameStateService: GameStateService) {
     private val logger = KotlinLogging.logger {}
 
-
     @EventListener
     fun handleEvent(event: PresidentPowerEvent) {
-        logger.info { "President power in Listener!" }
+        logger.debug { "President power in Listener!" }
         when (event.presidentPowerMessage.power) {
             PEEK -> gameStateService.sendVotingGameState()
-            LOYALTY -> gameStateService.sendPresidentLoyalty(event.presidentPowerMessage.theObject)
+            PEEK_LOYALTY -> gameStateService.sendPresidentLoyalty(event.presidentPowerMessage.theObject)
             LOYALTY_PEEKED -> gameStateService.sendVotingGameState()
-            KILL_PLAYER -> {
+            KILLED_PLAYER -> {
                 gameStateService.killPlayer(event.presidentPowerMessage.theObject)
                 gameStateService.sendVotingGameState()
             }
-            PICK_PRESIDENT -> {
+            PICKED_PRESIDENT -> {
                 gameStateService.pickNextPresident(event.presidentPowerMessage.theObject)
                 gameStateService.sendVotingGameState()
             }
-            else -> TODO()
+            else -> {
+                logger.error { "Weird presidential power: ${event.presidentPowerMessage.power}" }
+            }
         }
     }
 
     companion object {
         const val PEEK = "peekedCards"
-        const val KILL_PLAYER = "killPlayer"
-        const val LOYALTY = "peekLoyalty"
+        const val KILLED_PLAYER = "killedPlayer"
+        const val PEEK_LOYALTY = "peekLoyalty"
         const val LOYALTY_PEEKED = "peekedLoyalty"
         const val PICK_PRESIDENT = "pickPresident"
+        const val PICKED_PRESIDENT = "pickedPresident"
     }
 }

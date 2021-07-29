@@ -13,7 +13,7 @@ fun getShuffledRoles(size: Int): List<String> {
         10 -> howManyLibFacWithOutHit(6, 3)
         else -> throw IllegalArgumentException("Not enough or too many players!")
     }
-    //roles.shuffled()
+    roles.shuffled() //TODO: not working
     return roles
 }
 
@@ -25,10 +25,12 @@ private fun howManyLibFacWithOutHit(libCount: Int, facCount: Int): MutableList<S
 
 fun getNextPresident(
         prevPresident: Player,
+        alivePlayersOrder: List<Player>,
         nextPresident: Player? = null,
-        alivePlayersOrder: List<Player>): Player {
-    //TODO: tests
+        prevNormalPresident: Player? = null
+        ): Player {
+    println("Received in getNextPresident: (${prevPresident.name}, ${nextPresident?.name}, ${prevNormalPresident?.name})")
     return nextPresident ?: alivePlayersOrder[
-            (alivePlayersOrder.indexOf(prevPresident) + 1).rem(alivePlayersOrder.size)
+            (alivePlayersOrder.indexOf(prevNormalPresident ?: prevPresident) + 1).rem(alivePlayersOrder.size)
     ]
 }

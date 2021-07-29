@@ -30,7 +30,8 @@ class App extends PureComponent {
 
     render = () => <Fragment>
         <SockJsClient
-            url={`${process.env.REACT_APP_SERVER_URL}/secrethit`}
+            // url={`${process.env.REACT_APP_SERVER_URL}/secrethit`}
+            url='http://localhost:8080/secrethit'
             topics={['/user/queue/reply', '/queue/reply', '/topic/gameState']}
             onMessage={this.handleMessage}
             ref={client => {
@@ -120,6 +121,7 @@ class App extends PureComponent {
                     break;
                 case 'presidentialPower':
                     const presidentialPowerObj = {...msg[key]};
+                    console.log('Presidential power obj: ' + presidentialPowerObj.toString())
                     if (Object.keys({...presidentialPowerObj})[0] === 'peekedCards') {
                         this.setPresidentialPower('peekedCards');
                         console.log('Peeked cards: ', presidentialPowerObj['peekedCards']);
@@ -132,6 +134,10 @@ class App extends PureComponent {
                     if (Object.keys({...presidentialPowerObj})[0] === 'peekLoyalty') {
                         console.log('Choosing whose loyalty to peek.');
                         this.setPresidentialPower('peekLoyalty');
+                    }
+                    if (Object.keys({...presidentialPowerObj})[0] === 'pickPresident') {
+                        console.log('Picking next president.');
+                        this.setPresidentialPower('pickPresident');
                     }
                     if (Object.keys({...presidentialPowerObj})[0] === 'peekedLoyalty') {
                         this.setPresidentialPower('peekedLoyalty');

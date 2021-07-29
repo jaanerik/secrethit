@@ -22,7 +22,6 @@ const val RESET_MSG = "\$reset\$"
 @Controller
 class Controller(private val gameStateService: GameStateService, private val publisher: ApplicationEventPublisher) {
 
-    @CrossOrigin(origins = ["http://localhost:3000"])
     @MessageMapping("/voting")
     fun processMessageFromClient(
             @Payload message: VotingMessage,
@@ -30,7 +29,6 @@ class Controller(private val gameStateService: GameStateService, private val pub
             messageHeaders: MessageHeaders
     ) = gameStateService.handleVoteOrChancellorCandidate(sha, message)
 
-    @CrossOrigin(origins = ["http://localhost:3000"])
     @MessageMapping("/register")
     fun processMessageFromClient(
             @Payload message: RegisterMessage,
@@ -42,7 +40,6 @@ class Controller(private val gameStateService: GameStateService, private val pub
         else -> gameStateService.addPlayer(message, sha, messageHeaders)
     }
 
-    @CrossOrigin(origins = ["http://localhost:3000"])
     @MessageMapping("/discard")
     fun processMessageFromClient(
             @Payload message: DiscardMessage,
@@ -50,7 +47,6 @@ class Controller(private val gameStateService: GameStateService, private val pub
             messageHeaders: MessageHeaders
     ) = gameStateService.handleDiscard(message)
 
-    @CrossOrigin(origins = ["http://localhost:3000"])
     @MessageMapping("/reset")
     fun processMessageFromClient(
             @Payload message: ResetMessage,
@@ -58,7 +54,6 @@ class Controller(private val gameStateService: GameStateService, private val pub
             messageHeaders: MessageHeaders
     ) = if (message.message == RESET_MSG) gameStateService.resetGame() else logger.info { "Wrong arg reset" }
 
-    @CrossOrigin(origins = ["http://localhost:3000"])
     @MessageMapping("/presidentPower")
     fun processMessageFromClient(
             @Payload message: PresidentPowerMessage,
@@ -66,7 +61,6 @@ class Controller(private val gameStateService: GameStateService, private val pub
             messageHeaders: MessageHeaders
     ) = publisher.publishEvent(PresidentPowerEvent(this::class, message))
 
-    @CrossOrigin(origins = ["http://localhost:3000"])
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     fun handleException(exception: Throwable): String? {

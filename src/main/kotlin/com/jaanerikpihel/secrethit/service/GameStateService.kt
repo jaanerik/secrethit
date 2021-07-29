@@ -3,9 +3,9 @@ package com.jaanerikpihel.secrethit.service
 import com.google.gson.Gson
 import com.jaanerikpihel.secrethit.controller.introMessage
 import com.jaanerikpihel.secrethit.controller.waitAndDo
-import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.LOYALTY
+import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.PEEK_LOYALTY
 import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.LOYALTY_PEEKED
-import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.PEEK
+import com.jaanerikpihel.secrethit.listener.GameStateListener.Companion.PICK_PRESIDENT
 import com.jaanerikpihel.secrethit.model.*
 import com.jaanerikpihel.secrethit.model.GameState.Companion.REGISTER
 import mu.KotlinLogging
@@ -22,7 +22,7 @@ const val LIBERAL = "Liberal"
 const val HITLER = "Hitler"
 const val YAY = "Yay"
 const val NAY = "Nay"
-const val TIME_TO_WAIT = 15000L
+const val TIME_TO_WAIT = 1500L
 const val CANDIDATE = "Candidate"
 const val TOPIC_GAMESTATE = "/topic/gameState"
 const val QUEUE_REPLY = "/queue/reply"
@@ -55,7 +55,7 @@ class GameStateService(
                 messageHeaders
         )
         allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run { it.first.role = it.second } }
-        gameState.alivePlayerOrder = allPlayers.shuffled().toMutableList()
+        gameState.alivePlayerOrder = allPlayers.shuffled().toMutableList() //TODO: shuffle not working
         logger.info { "Alive player order: ${gameState.alivePlayerOrder}" }
         allPlayers.forEach {
             if (it.role == FASCIST) {
@@ -139,29 +139,42 @@ class GameStateService(
     }
 
     fun sendVotingGameState() {
+        logger.debug { "Sending voting game state, pres ${gameState.president}" }
         voterYayOrNayMap = mutableMapOf()
         gameState.lastGovernment = Pair(gameState.president!!, gameState.chancellor!!)
-        gameState.president = getNextPresident(
+        gameState.president = if (gameState.nextGovernmentIsSpecialElection) {
+            getNextPresident(
                 gameState.president!!,
-                null,
-                alivePlayersOrder = gameState.alivePlayerOrder
-        )
+                gameState.alivePlayerOrder,
+                gameState.nextPresidentialCandidate,
+                gameState.previousNormalPresident
+            )
+        } else { getNextPresident(
+                gameState.president!!,
+                gameState.alivePlayerOrder
+            )
+        }
+        logger.debug { "New president: ${gameState.president}" }
+        gameState.nextGovernmentIsSpecialElection = false
+        gameState.previousNormalPresident = null
+        gameState.nextPresidentialCandidate = null
         gameState.gameState = GameState.VOTING
         gameState.chancellor = null
         gameState.extraInfo = ""
         messagingTemplate.convertAndSend(TOPIC_GAMESTATE, gameState.toJSON(), messageHeaders!!)
-        println("Sent game state with players: ${gameState.alivePlayerOrder}")
+        logger.debug { "Sent game state with players: ${gameState.alivePlayerOrder}" }
     }
 
-    private fun handlePresidentialPowers(defaultFunction: () -> Unit) =/*
+    private fun handlePresidentialPowers(defaultFunction: () -> Unit) =
+        /*
         This function is called only when fac policy is just enacted.
-        TODO:   5-6 p 3rd card pres examines 3, kill, kill
+        Expected:   5-6 p 3rd card pres examines 3, kill, kill
                 7-8 p 2nd card pres examines party, picks next pres, kill, kill
                 9-10p 1st also examination, others same as before
          */
             when {
                 gameState.alivePlayerOrder.size <= 6 -> when (gameState.facPolicies) {
-                    1 -> askPresidentToExamineParty() //delete
+                    1 -> askPresidentToPickNextPresident() //TODO: remove
                     3 -> sendPresidentThreeTopCards()
                     4, 5 -> askPresidentToKillPlayer()
                     else -> defaultFunction()
@@ -184,29 +197,20 @@ class GameStateService(
             }
 
     private fun askPresidentToPickNextPresident() {
-        println("askPresidenttoPickNext")
-        TODO("Not yet implemented")
+        messagingTemplate.convertAndSendToUser(
+            gameState.president!!.sessionId, QUEUE_REPLY,
+            Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(PICK_PRESIDENT to "")))
+        )
+        logger.info { "Asked president to pick next president." }
     }
 
     private fun askPresidentToExamineParty() {
         messagingTemplate.convertAndSendToUser(
                 gameState.president!!.sessionId, QUEUE_REPLY,
-                Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(LOYALTY to "")))
+                Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(PEEK_LOYALTY to "")))
         )
         logger.info { "Asked president to examine somebody." }
 
-    }
-
-    fun sendPresidentLoyalty(subject: String) {
-        val player = gameState.alivePlayerOrder.first { it.name == subject }
-        val loyalty = if (player.role != LIBERAL) FASCIST else LIBERAL
-        messagingTemplate.convertAndSendToUser(
-                gameState.president!!.sessionId, QUEUE_REPLY,
-                Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(LOYALTY_PEEKED to
-                    mapOf("playerName" to player.name, "playerRole" to loyalty)
-                )))
-        )
-        logger.info { "Sent party of  ${player.name} (${player.role}) to president." }
     }
 
     private fun askPresidentToKillPlayer() {
@@ -219,6 +223,18 @@ class GameStateService(
                                         gameState.alivePlayerOrder.filter { it != gameState.president }.map { it.name }
                                 )))
         )
+    }
+
+    fun sendPresidentLoyalty(subject: String) {
+        val player = gameState.alivePlayerOrder.first { it.name == subject }
+        val loyalty = if (player.role != LIBERAL) FASCIST else LIBERAL
+        messagingTemplate.convertAndSendToUser(
+            gameState.president!!.sessionId, QUEUE_REPLY,
+            Gson().toJson(mapOf(PRESIDENTIAL_POWER to mapOf(LOYALTY_PEEKED to
+                    mapOf("playerName" to player.name, "playerRole" to loyalty)
+            )))
+        )
+        logger.info { "Sent party of  ${player.name} (${player.role}) to president." }
     }
 
     private fun sendPresidentThreeTopCards() {
@@ -275,8 +291,7 @@ class GameStateService(
             voterYayOrNayMap = mutableMapOf()
             gameState.president = getNextPresident(
                     gameState.president!!,
-                    null,
-                    alivePlayersOrder = gameState.alivePlayerOrder
+                    gameState.alivePlayerOrder
             )
             gameState.failedGovernments++
             if (gameState.failedGovernments == 3) {
@@ -296,7 +311,7 @@ class GameStateService(
         logger.info { "Resetting game." }
         allPlayers = emptyList<Player>().toMutableList()
         playerNameToHeaders = mutableMapOf()
-        gameState = GameState(GameState.REGISTER)
+        gameState = GameState(REGISTER)
         voterYayOrNayMap = mutableMapOf()
         messagingTemplate.convertAndSend(
                 TOPIC_GAMESTATE,
@@ -317,6 +332,9 @@ class GameStateService(
     }
 
     fun pickNextPresident(subject: String) {
-        TODO("Not yet implemented")
+        gameState.nextGovernmentIsSpecialElection = true
+        gameState.previousNormalPresident = gameState.president
+        gameState.nextPresidentialCandidate = gameState.alivePlayerOrder.first { it.name == subject }
+        logger.info { "Previous president ${gameState.president} picked new candidate ${gameState.nextPresidentialCandidate}. Special election voting." }
     }
 }

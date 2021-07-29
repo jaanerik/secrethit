@@ -16,6 +16,9 @@ class GameState() {
     var failedGovernments: Int = 0
     var extraInfo: String = ""
     var alivePlayerOrder: MutableList<Player> = mutableListOf()
+    var nextGovernmentIsSpecialElection: Boolean = false
+    var nextPresidentialCandidate: Player? = null
+    var previousNormalPresident: Player? = null
 
     constructor(
             gameState: String = "",
@@ -27,7 +30,10 @@ class GameState() {
             chancellor: Player? = null,
             players: List<Player>? = null,
             nullGovernments: Int = 0,
-            extraInfo: String = "{}"
+            extraInfo: String = "{}",
+            lastGovernmentWasSpecialElection: Boolean = false,
+            nextPresidentialCandidate: Player? = null,
+            previousNormalPresident: Player? = null
     ) : this() {
         this.gameState = gameState
         this.facPolicies = facPolicies
@@ -40,6 +46,9 @@ class GameState() {
         this.players = players
         this.failedGovernments = nullGovernments
         this.extraInfo = extraInfo
+        this.nextGovernmentIsSpecialElection = lastGovernmentWasSpecialElection
+        this.nextPresidentialCandidate = nextPresidentialCandidate
+        this.previousNormalPresident = previousNormalPresident
     }
 
     companion object {

@@ -14,9 +14,8 @@ class CorsFilter : OncePerRequestFilter() {
             request: HttpServletRequest,
             response: HttpServletResponse,
             filterChain: FilterChain) {
-//        val origin = request.getHeader(ORIGIN)
-        response.setHeader("Access-Control-Allow-Origin", "http://localhost:8080")
-//        response.setHeader("Access-Control-Allow-Origin", "*")
+//        response.setHeader("Access-Control-Allow-Origin", "http://localhost:8080")
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000") // For development only
         response.setHeader("Access-Control-Allow-Credentials", "true")
         response.setHeader("Access-Control-Allow-Methods", "PUT, POST, GET, OPTIONS, DELETE, PATCH, HEAD")
         response.setHeader("Access-Control-Max-Age", "3600")

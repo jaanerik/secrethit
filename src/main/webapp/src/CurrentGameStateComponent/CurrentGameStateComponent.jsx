@@ -10,9 +10,9 @@ export default class CurrentGameStateComponent extends PureComponent {
 
     renderCurrentState = (lastGovernment) => {
         function formatLastGovernment() {
-            if (lastGovernment.first !== '') { return '' }
-            return lastGovernment.first +
-            ' and ' + lastGovernment.second
+            console.log('Last government: ' + lastGovernment.toString())
+            if (lastGovernment.first === '') { return '' }
+            return lastGovernment.first + ' and ' + lastGovernment.second
         }
 
         return (
