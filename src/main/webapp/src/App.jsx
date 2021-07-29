@@ -30,8 +30,8 @@ class App extends PureComponent {
 
     render = () => <Fragment>
         <SockJsClient
-            // url={`${process.env.REACT_APP_SERVER_URL}/secrethit`}
-            url='http://localhost:8080/secrethit'
+            url={`${process.env.REACT_APP_SERVER_URL}/secrethit`}
+            // url='http://localhost:8080/secrethit' //development only
             topics={['/user/queue/reply', '/queue/reply', '/topic/gameState']}
             onMessage={this.handleMessage}
             ref={client => {

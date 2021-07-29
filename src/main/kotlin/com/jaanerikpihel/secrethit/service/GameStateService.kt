@@ -55,8 +55,9 @@ class GameStateService(
                 messageHeaders
         )
         allPlayers.zip(getShuffledRoles(allPlayers.size)).forEach { run { it.first.role = it.second } }
-        gameState.alivePlayerOrder = allPlayers.shuffled().toMutableList() //TODO: shuffle not working
-        logger.info { "Alive player order: ${gameState.alivePlayerOrder}" }
+        gameState.alivePlayerOrder = allPlayers.shuffled() as MutableList<Player> //TODO: shuffle not working
+        logger.info { "Alive player order: ${gameState.alivePlayerOrder.map { it.name }}" }
+        logger.info { "Alive player order roles: ${gameState.alivePlayerOrder.map { it.role}}" }
         allPlayers.forEach {
             if (it.role == FASCIST) {
                 messagingTemplate.convertAndSendToUser(
@@ -122,8 +123,8 @@ class GameStateService(
             messagingTemplate.convertAndSendToUser(gameState.chancellor!!.sessionId, QUEUE_REPLY, cards)
         } else {
             logger.info { "Received from chancellor: ${message.cards} (discarded ${message.discardedCard})" }
-            val isCardLiberal = message.cards[0].toLowerCase() == LIBERAL.toLowerCase()
-            val isCardFascist = message.cards[0].toLowerCase() == FASCIST.toLowerCase()
+            val isCardLiberal = message.cards[0].equals(LIBERAL, ignoreCase = true)
+            val isCardFascist = message.cards[0].equals(FASCIST, ignoreCase = true)
             when {
                 isCardLiberal -> {
                     gameState.libPolicies++
@@ -174,7 +175,6 @@ class GameStateService(
          */
             when {
                 gameState.alivePlayerOrder.size <= 6 -> when (gameState.facPolicies) {
-                    1 -> askPresidentToPickNextPresident() //TODO: remove
                     3 -> sendPresidentThreeTopCards()
                     4, 5 -> askPresidentToKillPlayer()
                     else -> defaultFunction()

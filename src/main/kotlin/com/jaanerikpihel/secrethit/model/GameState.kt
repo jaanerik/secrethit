@@ -106,8 +106,8 @@ class GameStateShareable(gameState: GameState) {
 
 class CardPack {
 
-    var cards: MutableList<String> = (MutableList(11) { "fascist" } + MutableList(6) { "liberal" })
-            .shuffled() as MutableList<String>
+    var cards: MutableList<String> = ((MutableList(11) { "fascist" } + MutableList(6) { "liberal" })
+            .shuffled()) as MutableList<String>
 
     var discardPile: MutableList<String> = mutableListOf()
 

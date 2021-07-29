@@ -41,7 +41,7 @@ export default class CurrentGameStateComponent extends PureComponent {
                             </tr>
                             <tr>
                                 <td className="attr">Players</td>
-                                <td>{this.context.players.length}</td>
+                                <td>{this.context.players.toString()}</td>
                             </tr>
                             <tr>
                                 <td className="attr">Last government</td>

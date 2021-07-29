@@ -71,7 +71,8 @@ export default class VotingPage extends PureComponent {
                 <table id="choices" className="table table-striped">
                     <tbody id="registrations">
                     {this.context.players.filter((s) => {
-                        return s !== this.context.myName
+                        return s !== this.context.myName && s !== this.context.lastGovernment.first &&
+                            s !== this.context.lastGovernment.second
                     }).map(this.renderPlayer)}
                     </tbody>
                 </table>
