@@ -9,6 +9,12 @@ This is a project for playing the [Secret Hitler board game](https://www.secreth
 
 A most basic 0.0.1 version of the game is now completed and [is hosted in aws](http://secrethit-env.eba-3s67uuww.eu-north-1.elasticbeanstalk.com/).
 
+## License and Attribution
+
+Secret Hitler is designed by Max Temkin (Cards Against Humanity, Humans vs. Zombies), Mike Boxleiter (Solipskier, TouchTone), Tommy Maranges (Philosophy Bro) and illustrated by Mackenzie Schubert (Letter Tycoon, Penny Press).
+
+This game is licensed as per the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license.
+
 ### TODO
 - Make connections more sturdy - if person disconnects then game should not break
 - Make UI more usable, beautiful
