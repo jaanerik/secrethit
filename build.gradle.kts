@@ -13,6 +13,7 @@ plugins {
 
 application {
 	mainClassName = "com.jaanerikpihel.secrethit.SecrethitApplicationKt"
+	project.version = "0.0.1"
 }
 
 repositories {
