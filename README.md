@@ -3,13 +3,18 @@
 
 [![version](https://img.shields.io/badge/version-0.0.1-yellow.svg)](https://semver.org)
 
-This is a project for playing the [Secret Hitler board game](https://www.secrethitler.com/) online. This is a study project for me to familiarise myself to websockets, kotlin and spring boot.
+This is a project for playing the [Secret Hitler board game](https://www.secrethitler.com/) online. This is a study project for me to familiarise myself to websockets, kotlin, react, spring boot and build tools (gradle kts and react-scripts).
 
 ## Current progress
 
-A most basic version of the game is now completed and [is hosted in aws](http://secrethit-env.eba-3s67uuww.eu-north-1.elasticbeanstalk.com/).
+A most basic 0.0.1 version of the game is now completed and [is hosted in aws](http://secrethit-env.eba-3s67uuww.eu-north-1.elasticbeanstalk.com/).
 
-The recommended changes have not yet been made: e.g. it is now recommended that there are less fascist policies when there are certain number of players etc. Also it is possible to add socialists to the game dynamic.
+### TODO
+- Make connections more sturdy - if person disconnects then game should not break
+- Make UI more usable, beautiful
+- Make application INFO level logs accessible after game for analysis
+- The recommended changes (there are less fascist policies when there are certain number of players)
+- Add socialists to game dynamic
 
 ## Building for local development
 
